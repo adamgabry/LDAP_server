@@ -1,91 +1,87 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <unistd.h>
 
-#define PORT 8080
+// Function to handle BindRequest
+void handleBindRequest(int client_socket) {
+    char bind_request[1024];
+    int bind_request_length;
 
-typedef struct {
-    int messageID;
-    int version;
-    char bindDN[256];
-    char password[256];
-} BindRequest;
+    // Receive the BindRequest from the client
+    bind_request_length = recv(client_socket, bind_request, sizeof(bind_request), 0);
+    if (bind_request_length <= 0) {
+        perror("Error receiving BindRequest");
+        close(client_socket);
+        return;
+    }
 
-typedef struct {
-    int messageID;
-    int resultCode;
-    char errorMessage[256];
-} BindResponse;
+    // Parse the BindRequest (not a complete implementation)
+    // For a production server, you'd need to fully parse the LDAP message
+    // to extract the DN and credentials.
+
+    // Simulate a successful authentication
+    int result_code = 0;  // Success
+
+    // Construct the BindResponse (not a complete implementation)
+    // For a production server, construct a full LDAP response message.
+    char bind_response[1024];
+    int bind_response_length = snprintf(bind_response, sizeof(bind_response), "\x30\x09\x02\x01\x01\x61\x04\x04\x00\x04\x00");
+
+    // Send the BindResponse to the client
+    send(client_socket, bind_response, bind_response_length, 0);
+
+    close(client_socket);
+}
 
 int main() {
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    int opt = 1;
-    int addrlen = sizeof(address);
-    char buffer[1024] = {0};
-    BindRequest bindRequest;
-    BindResponse bindResponse;
+    int server_socket, client_socket;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_addr_len = sizeof(client_addr);
 
-    // Create socket
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
+    // Create a socket
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket == -1) {
+        perror("Error creating socket");
+        exit(1);
     }
 
-    // Set socket options
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt failed");
-        exit(EXIT_FAILURE);
+    // Configure the server address structure
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(389); // LDAP default port
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+
+    // Bind the socket to the server address
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        perror("Error binding socket");
+        close(server_socket);
+        exit(1);
     }
 
-    // Bind socket to port
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
+    // Start listening for incoming connections
+    if (listen(server_socket, 5) == -1) {
+        perror("Error listening");
+        close(server_socket);
+        exit(1);
     }
 
-    // Listen for incoming connections
-    if (listen(server_fd, 3) < 0) {
-        perror("listen failed");
-        exit(EXIT_FAILURE);
-    }
+    printf("LDAP server is listening on port 389...\n");
 
-    printf("Server listening on port %d\n", PORT);
-
-    // Accept incoming connections and handle BindRequest
     while (1) {
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-            perror("accept failed");
-            exit(EXIT_FAILURE);
+        // Accept incoming connections
+        client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
+        if (client_socket == -1) {
+            perror("Error accepting connection");
+            continue;
         }
 
-        // Read BindRequest message from client
-        read(new_socket, &bindRequest, sizeof(BindRequest));
-
-        // Verify username and password
-        if (strcmp(bindRequest.bindDN, "cn=admin,dc=example,dc=com") == 0 &&
-            strcmp(bindRequest.password, "password") == 0) {
-            // Send BindResponse indicating success
-            bindResponse.messageID = bindRequest.messageID;
-            bindResponse.resultCode = 0;
-            strcpy(bindResponse.errorMessage, "");
-            write(new_socket, &bindResponse, sizeof(BindResponse));
-        } else {
-            // Send BindResponse indicating failure
-            bindResponse.messageID = bindRequest.messageID;
-            bindResponse.resultCode = 49;
-            strcpy(bindResponse.errorMessage, "Invalid credentials");
-            write(new_socket, &bindResponse, sizeof(BindResponse));
-        }
-
-        close(new_socket);
+        // Handle the BindRequest for the client
+        handleBindRequest(client_socket);
     }
 
+    close(server_socket);
     return 0;
 }
