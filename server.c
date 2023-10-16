@@ -18,13 +18,20 @@ void handleBindRequest(int client_socket) {
         close(client_socket);
         return;
     }
-
+    
+    // Print out the contents of the BindRequest
+    printf("Received BindRequest from client:\n");
+    for (int i = 0; i < bind_request_length; i++) {
+        printf("%02x ", (unsigned char)bind_request[i]);
+    }
+    printf("\n");
+    
     // Parse the BindRequest (not a complete implementation)
     // For a production server, you'd need to fully parse the LDAP message
     // to extract the DN and credentials.
 
     // Simulate a successful authentication
-    int result_code = 0;  // Success
+    //int result_code = 0;  // Success
 
     // Construct the BindResponse (not a complete implementation)
     // For a production server, construct a full LDAP response message.
@@ -51,8 +58,9 @@ int main() {
 
     // Configure the server address structure
     server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY; // Listen only on localhost
     server_addr.sin_port = htons(389); // LDAP default port
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+
 
     // Bind the socket to the server address
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
@@ -77,9 +85,10 @@ int main() {
             perror("Error accepting connection");
             continue;
         }
-
+        printf("Connection accepted from %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
         // Handle the BindRequest for the client
         handleBindRequest(client_socket);
+        printf("Connection closed\n");
     }
 
     close(server_socket);
