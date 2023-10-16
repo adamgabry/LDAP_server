@@ -6,6 +6,9 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#define DEBUG 1;
+#define PORT 3890
+
 // Function to handle BindRequest
 void handleBindRequest(int client_socket) {
     char bind_request[1024];
@@ -18,28 +21,45 @@ void handleBindRequest(int client_socket) {
         close(client_socket);
         return;
     }
+
+    // Print the BindRequest in hex format
+    #ifdef DEBUG
+        printf("Received BindRequest from client:\n");
+        for (int i = 0; i < bind_request_length; i++) {
+            printf("%02x ", (unsigned char)bind_request[i]);
+        }
+        printf("\n");
+    #endif
     
-    // Print out the contents of the BindRequest
-    printf("Received BindRequest from client:\n");
-    for (int i = 0; i < bind_request_length; i++) {
-        printf("%02x ", (unsigned char)bind_request[i]);
+    // Parse the BindRequest
+    //int version = bind_request[0];
+    int dn_length = bind_request[1];
+    char dn[1024];
+    memcpy(dn, &bind_request[2], dn_length);
+    dn[dn_length] = '\0';
+    int credentials_length = bind_request[2 + dn_length + 1];
+    char credentials[1024];
+    memcpy(credentials, &bind_request[2 + dn_length + 2], credentials_length);
+    credentials[credentials_length] = '\0';
+
+    // Construct the BindResponse
+    char bind_response[1024];
+    const unsigned char bind_data[] = {0x30, 0x0c, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0a, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
+    int bind_data_length = sizeof(bind_data);
+
+    // Make sure bind_response has enough space for bind_data
+    memcpy(bind_response, bind_data, bind_data_length);
+
+// The actual length is the same as bind_data_length
+int bind_response_length = bind_data_length;
+    printf("BindResponse lenght: %d \n Sent BindResponse to the client:", bind_response_length);
+    for (int i = 0; i < bind_response_length; i++) {
+        printf("%02x ", (unsigned char)bind_response[i]);
     }
     printf("\n");
-    
-    // Parse the BindRequest (not a complete implementation)
-    // For a production server, you'd need to fully parse the LDAP message
-    // to extract the DN and credentials.
-
-    // Simulate a successful authentication
-    //int result_code = 0;  // Success
-
-    // Construct the BindResponse (not a complete implementation)
-    // For a production server, construct a full LDAP response message.
-    char bind_response[1024];
-    int bind_response_length = snprintf(bind_response, sizeof(bind_response), "\x30\x09\x02\x01\x01\x61\x04\x04\x00\x04\x00");
-
     // Send the BindResponse to the client
     send(client_socket, bind_response, bind_response_length, 0);
+
 
     close(client_socket);
 }
@@ -59,7 +79,7 @@ int main() {
     // Configure the server address structure
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY; // Listen only on localhost
-    server_addr.sin_port = htons(389); // LDAP default port
+    server_addr.sin_port = htons(PORT); // LDAP default port
 
 
     // Bind the socket to the server address
@@ -76,7 +96,7 @@ int main() {
         exit(1);
     }
 
-    printf("LDAP server is listening on port 389...\n");
+    printf("LDAP server is listening on port %d...\n", PORT);
 
     while (1) {
         // Accept incoming connections
@@ -88,7 +108,7 @@ int main() {
         printf("Connection accepted from %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
         // Handle the BindRequest for the client
         handleBindRequest(client_socket);
-        printf("Connection closed\n");
+        printf("End of the packet\n \n ");
     }
 
     close(server_socket);
