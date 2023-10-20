@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wall -g
 
 # Source file and output executable name
-SOURCE = server.c
+SOURCE = server.c ldap_functions.c
 OUTPUT = server
 
 all: $(OUTPUT)
