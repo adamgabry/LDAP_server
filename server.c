@@ -12,6 +12,17 @@
 //custom libraries
 #include "ldap_functions.h"
 
+#define ERR 1
+
+void* client_handler(void* arg) {
+    int client_socket = *((int*)arg);
+    free(arg); // Free the allocated memory
+
+    handleBindRequest(client_socket);
+
+    close(client_socket);
+    return NULL;
+}
 
 int main() {
     int server_socket, client_socket;
@@ -22,7 +33,7 @@ int main() {
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1) {
         perror("Error creating socket");
-        exit(1);
+        exit(ERR);
     }
 
     // Configure the server address structure
@@ -35,18 +46,18 @@ int main() {
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
         perror("Error binding socket");
         close(server_socket);
-        exit(1);
+        exit(ERR);
     }
 
     // Start listening for incoming connections
     if (listen(server_socket, 5) == -1) {
         perror("Error listening");
         close(server_socket);
-        exit(1);
+        exit(ERR);
     }
 
     printf("LDAP server is listening on port %d...\n", PORT);
-
+    int i = 1;
     while (1) {
         // Accept incoming connections
         client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
@@ -54,8 +65,20 @@ int main() {
             perror("Error accepting connection");
             continue;
         }
-        printf("Connection accepted from %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-        // Handle the BindRequest for the client
+
+        // Create a new thread to handle the client
+        pthread_t tid;
+        int* client_socket_ptr = (int*)malloc(sizeof(int));
+        *client_socket_ptr = client_socket;
+        if (pthread_create(&tid, NULL, client_handler, client_socket_ptr) != 0) {
+            perror("Error creating thread");
+            close(client_socket);
+            free(client_socket_ptr);
+        }
+
+        printf("Client %d: Connection accepted from %s:%d\n", i, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        i++;
+        // start handling the communication with the client
         handleBindRequest(client_socket);
         printf("End of the packet\n \n ");
     }
