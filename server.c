@@ -1,4 +1,3 @@
-
 //standart libraries
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,6 +76,8 @@ int main() {
         // start handling the communication with the client
         // if unsuccessful, close the client socket and free the allocated memory
         // here client_handler is the function that calls the handleBindRequest function
+
+        pthread_t tid;
         if (pthread_create(&tid, NULL, client_handler, client_socket_ptr) != 0) {
             perror("Error creating thread");
             close(client_socket);

@@ -7,7 +7,6 @@
 //declaring fctions, so i can use them before they are defined.
 void sendBindResponse(int client_socket);
 
-
 // Function to handle BindRequest
 void handleBindRequest(int client_socket) {
     char bind_request[1024];
