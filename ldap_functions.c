@@ -43,6 +43,7 @@ void handleBindRequest(int client_socket) {
 
     // Construct and send the BindResponse
     sendBindResponse(client_socket);
+    sleep(5);
     close(client_socket);
 }
 
