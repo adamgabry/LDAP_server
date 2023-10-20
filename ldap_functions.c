@@ -44,6 +44,7 @@ void handleBindRequest(int client_socket) {
     // Construct and send the BindResponse
     sendBindResponse(client_socket);
     sleep(10);
+    printf("End of the packet\n \n ");
 
     close(client_socket);
 }

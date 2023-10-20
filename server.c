@@ -67,21 +67,21 @@ int main() {
             continue;
         }
 
+        printf("Client %d: Connection accepted from %s:%d\n", i, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        i++;
+        
         // Create a new thread to handle the client
-        pthread_t tid;
         int* client_socket_ptr = (int*)malloc(sizeof(int));
         *client_socket_ptr = client_socket;
+
+        // start handling the communication with the client
+        // if unsuccessful, close the client socket and free the allocated memory
+        // here client_handler is the function that calls the handleBindRequest function
         if (pthread_create(&tid, NULL, client_handler, client_socket_ptr) != 0) {
             perror("Error creating thread");
             close(client_socket);
             free(client_socket_ptr);
         }
-
-        printf("Client %d: Connection accepted from %s:%d\n", i, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-        i++;
-        // start handling the communication with the client
-        handleBindRequest(client_socket);
-        printf("End of the packet\n \n ");
     }
 
     close(server_socket);
