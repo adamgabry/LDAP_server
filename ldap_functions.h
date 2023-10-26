@@ -4,6 +4,8 @@
     #define PORT 389
     #define DEBUG 1
 
+    using namespace std;
+
     //macro for DEBUG printing
     #ifdef DEBUG
         #define DEBUG_PRINT(message) std::cout << message << std::endl
