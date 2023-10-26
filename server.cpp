@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream> // Include the necessary header for file operations
 #include <cstdlib>
+#include <thread>
 #include <cstring>
 #include <sstream>
 #include <string.h>
@@ -18,7 +19,7 @@
 #include "server.h"
 
 
-void* client_handler(void* arg) {
+void* client_handler(void* arg, set<vector<string>> database) {
     int client_socket = *((int*)arg);
     free(arg); // Free the allocated memory
 
@@ -96,35 +97,25 @@ void server::parse_database(string input_file)
     }
 }
 
-void server::connect_clients()
-{
-    while (1) 
-    {
+void server::connect_clients() {
+    int client_num = 1;
+    while (1) {
         // Accept incoming connections
         client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
-        if (client_socket == -1) 
-        {
+        if (client_socket == -1) {
             perror("Error accepting connection");
             continue;
         }
-        int client_num = 1;
 
-        std::cout << "Client " << client_num << ": Connection accepted from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << std::endl;
+        cout << "Client " << client_num << ": Connection accepted from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
         client_num++;
 
         // Create a new thread to handle the client
-        client_socket_ptr = (int*)malloc(sizeof(int));
+        int* client_socket_ptr = (int*)malloc(sizeof(int));
         *client_socket_ptr = client_socket;
 
-        // Start handling the communication with the client
-        // If unsuccessful, close the client socket and free the allocated memory
-        // client_handler is the function that calls the handleBindRequest function
-        if (pthread_create(&tid, NULL, client_handler, client_socket_ptr) != 0) 
-        {
-            perror("Error creating thread");
-            close(client_socket);
-            free(client_socket_ptr);
-        }
+        // Start handling the communication with the client in a new thread
+        thread(client_handler, client_socket_ptr, database).detach(); // Detach the thread to make it run independently
     }
     close(server_socket);
 }
@@ -156,8 +147,7 @@ int main(int argc, char *argv[])
     std::cout << "LDAP server is listening on port " << PORT << "..." << std::endl;
     
     ldap_server.parse_database(file_name);
-
     ldap_server.connect_clients();
-
+    
     return 0;
 }

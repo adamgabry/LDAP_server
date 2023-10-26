@@ -5,17 +5,15 @@
 #include <sys/socket.h>
 #include "ldap_functions.h"
 
-void handleBindRequest(int client_socket);
-void sendBindResponse(int client_socket);
-void addTestEntry();
-
-void handleBindRequest(int client_socket) {
+void handleBindRequest(int client_socket) 
+{
     char bind_request[1024];
     int bind_request_length;
 
     // Receive the BindRequest from the client
     bind_request_length = recv(client_socket, bind_request, sizeof(bind_request), 0);
-    if (bind_request_length <= 0) {
+    if (bind_request_length <= 0) 
+    {
         perror("Error receiving BindRequest");
         close(client_socket);
         return;
@@ -43,7 +41,7 @@ void handleBindRequest(int client_socket) {
 
     // Construct and send the BindResponse
     sendBindResponse(client_socket);
-    sleep(10);
+    sleep(5);
     std::cout << "End of the packet\n \n ";
     close(client_socket);
 }
@@ -68,22 +66,4 @@ void sendBindResponse(int client_socket) {
 
     // Send the BindResponse to the client
     send(client_socket, bind_response, bind_data_length, 0);
-}
-
-void addTestEntry()
-{
-    // Define the LDIF-style entry as a string
-    const char* testEntryLDIF = "dn: uid=xgabry01,dc=vutbr,dc=cz\n"
-                                "objectClass: top\n"
-                                "objectClass: person\n"
-                                "objectClass: organizationalPerson\n"
-                                "objectClass: inetOrgPerson\n"
-                                "uid: xgabry01\n"
-                                "cn: xgabry01\n"
-                                "mail: xgabry01@vutbr.cz\n";
-    // You would need to implement the code to parse and process the LDIF entry.
-    // In a real LDAP server, this would involve adding the entry to your data store.
-
-    // For this simplified example, let's just print the LDIF content.
-    std::cout << "Adding test entry:" << std::endl << testEntryLDIF << std::endl;
 }

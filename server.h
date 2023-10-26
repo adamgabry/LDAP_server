@@ -15,7 +15,7 @@ using namespace std;
 * handles more clients at the time
 * and calls handleBindRequest function  
 */
-void* client_handler(void* arg);
+void* client_handler(void* arg, set<vector<string>> database);
 
 
 class server
@@ -40,8 +40,7 @@ private:
             uid,
             cn,
             email;
-    using StringVectorSet = set<vector<string>>; // Define a type alias for convenience
-    StringVectorSet database;
+    set<vector<string>> database;
 
 public:
     /*
