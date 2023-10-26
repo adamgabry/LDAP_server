@@ -57,19 +57,21 @@ void sendBindResponse(int client_socket) {
     // Make sure bind_response has enough space for bind_data
     memcpy(bind_response, bind_data, bind_data_length);
 
-    // The actual length is the same as bind_data_length
-    int bind_response_length = bind_data_length;
-    std::cout << "BindResponse length: " << bind_response_length << "\nSent BindResponse to the client:";
-    for (int i = 0; i < bind_response_length; i++) {
+        if(DEBUG) std::cout << std::dec; //print in decimal
+        DEBUG_PRINT("BindResponse length: " << bind_data_length << "\nSent BindResponse to the client:");
+
+    for (int i = 0; i < bind_data_length; i++)
+    {
         std::cout << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)(unsigned char)bind_response[i] << " ";
     }
     std::cout << std::endl;
 
     // Send the BindResponse to the client
-    send(client_socket, bind_response, bind_response_length, 0);
+    send(client_socket, bind_response, bind_data_length, 0);
 }
 
-void addTestEntry() {
+void addTestEntry()
+{
     // Define the LDIF-style entry as a string
     const char* testEntryLDIF = "dn: uid=xgabry01,dc=vutbr,dc=cz\n"
                                 "objectClass: top\n"
@@ -84,6 +86,4 @@ void addTestEntry() {
 
     // For this simplified example, let's just print the LDIF content.
     std::cout << "Adding test entry:" << std::endl << testEntryLDIF << std::endl;
-
-    // In a real LDAP server, you would process the LDIF and add the entry to your directory data store.
 }

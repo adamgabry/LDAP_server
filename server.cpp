@@ -10,6 +10,7 @@
 
 // Custom libraries
 #include "ldap_functions.h"
+#include "server.h"
 
 #define ERR 1
 
@@ -19,44 +20,39 @@ void* client_handler(void* arg) {
 
     handleBindRequest(client_socket);
 
-    close(client_socket);
     return NULL;
 }
 
-int main() {
-    int server_socket, client_socket;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t client_addr_len = sizeof(client_addr);
+server::server(int port) {
 
     // Create a socket
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1) {
         perror("Error creating socket");
-        exit(ERR);
+        exit(EXIT_FAILURE);
     }
 
     // Configure the server address structure
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY; // Listen on all interfaces
-    server_addr.sin_port = htons(PORT); // LDAP default port
+    server_addr.sin_port = htons(port); 
 
     // Bind the socket to the server address
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
         perror("Error binding socket");
         close(server_socket);
-        exit(ERR);
+        exit(EXIT_FAILURE);
     }
 
     // Start listening for incoming connections
     if (listen(server_socket, 5) == -1) {
         perror("Error listening");
         close(server_socket);
-        exit(ERR);
+        exit(EXIT_FAILURE);
     }
-
-    std::cout << "LDAP server is listening on port " << PORT << "..." << std::endl;
-    int i = 1;
+}
+void server::connect_clients(){
     while (1) {
         // Accept incoming connections
         client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
@@ -64,12 +60,13 @@ int main() {
             perror("Error accepting connection");
             continue;
         }
+        int client_num = 1;
 
-        std::cout << "Client " << i << ": Connection accepted from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << std::endl;
-        i++;
+        std::cout << "Client " << client_num << ": Connection accepted from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << std::endl;
+        client_num++;
 
         // Create a new thread to handle the client
-        int* client_socket_ptr = (int*)malloc(sizeof(int));
+        client_socket_ptr = (int*)malloc(sizeof(int));
         *client_socket_ptr = client_socket;
 
         // Start handling the communication with the client
@@ -82,7 +79,16 @@ int main() {
             free(client_socket_ptr);
         }
     }
+close(server_socket);
+}
 
-    close(server_socket);
+int main() {
+
+    server ser(PORT);
+
+    std::cout << "LDAP server is listening on port " << PORT << "..." << std::endl;
+    
+    ser.connect_clients();
+
     return 0;
 }
