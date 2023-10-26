@@ -22,7 +22,17 @@
 void* client_handler(void* arg, set<vector<string>> database) {
     int client_socket = *((int*)arg);
     free(arg); // Free the allocated memory
-
+    
+        if(DEBUG)
+        {
+            for (const auto& record : database)
+            {
+                cout << "cn: " << record[0] << endl;
+                cout << "uid: " << record[1] << endl;
+                cout << "email: " << record[2] << endl;
+                cout << "----------------------" << endl;
+            }
+        }
     handleBindRequest(client_socket);
 
     return NULL;
@@ -81,9 +91,10 @@ void server::parse_database(string input_file)
         istringstream iss(line);
         if (getline(iss, cn, ';') && getline(iss, uid, ';') && getline(iss, email)) 
         {
-            data.push_back(cn);
-            data.push_back(uid);
-            data.push_back(email);
+            data.clear();
+            data.push_back(trim(cn));
+            data.push_back(trim(uid));
+            data.push_back(trim(email));
             database.emplace(data);
         }
         else
@@ -91,9 +102,9 @@ void server::parse_database(string input_file)
             cerr << "Failed to parse the line: " << line << endl;
         }
         
-        for (const string& item : data) {
-            cout << item << endl;
-    }
+        // for (const string& item : data) {
+        //    cout << item << endl;
+        //}
     }
 }
 
@@ -121,6 +132,17 @@ void server::connect_clients() {
 }
 
 
+/// @brief REDO THIS FCTION
+/// @param s 
+/// @return 
+string server::trim(string s) {
+    const char* t = " \t\n\r\f\v";
+    string tmp = s.erase(0, s.find_first_not_of(t));
+    tmp = tmp.erase(tmp.find_last_not_of(t) + 1);
+    return tmp;
+}
+
+
 int main(int argc, char *argv[]) 
 {
     int opt = 0;
@@ -144,7 +166,7 @@ int main(int argc, char *argv[])
 
     server ldap_server(PORT);
 
-    std::cout << "LDAP server is listening on port " << PORT << "..." << std::endl;
+    cout << "LDAP server is listening on port " << PORT << "..." << endl;
     
     ldap_server.parse_database(file_name);
     ldap_server.connect_clients();

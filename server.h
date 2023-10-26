@@ -55,4 +55,6 @@ public:
     *parsing data from csv file
     */
     void parse_database(string input_file);
+
+    string trim(string s);
 };
