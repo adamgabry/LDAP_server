@@ -1,11 +1,6 @@
-#include <iostream>
-#include <cstring>
-#include <unistd.h>
-#include <iomanip> 
-#include <sys/socket.h>
 #include "ldap_functions.h"
 
-void handleBindRequest(int client_socket) 
+void handleBindRequest(int client_socket, set<vector<string>> database) 
 {
     char bind_request[1024];
     int bind_request_length;
@@ -21,11 +16,11 @@ void handleBindRequest(int client_socket)
 
     // Print the BindRequest in hex format
     #ifdef DEBUG
-        std::cout << "Received BindRequest from client:" << std::endl;
+        cout << "Received BindRequest from client:" << endl;
         for (int i = 0; i < bind_request_length; i++) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)(unsigned char)bind_request[i] << " ";
+            cout << hex << setw(2) << setfill('0') << (unsigned int)(unsigned char)bind_request[i] << " ";
         }
-        std::cout << std::endl;
+        cout << endl;
     #endif
 
     // Parse the BindRequest

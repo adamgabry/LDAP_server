@@ -1,11 +1,19 @@
+// Standard C++ libraries
 #include <iostream>
+#include <fstream> // Include the necessary header for file operations
 #include <cstdlib>
+#include <thread>
+#include <cstring>
+#include <sstream>
 #include <string.h>
+#include <vector>
+#include <set>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <pthread.h>
+
 
 #define ERR 1
 

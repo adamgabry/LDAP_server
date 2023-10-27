@@ -1,18 +1,3 @@
-// Standard C++ libraries
-#include <iostream>
-#include <fstream> // Include the necessary header for file operations
-#include <cstdlib>
-#include <thread>
-#include <cstring>
-#include <sstream>
-#include <string.h>
-#include <vector>
-#include <set>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <pthread.h>
 
 // Custom libraries
 #include "ldap_functions.h"
@@ -22,7 +7,7 @@
 void* client_handler(void* arg, set<vector<string>> database) {
     int client_socket = *((int*)arg);
     free(arg); // Free the allocated memory
-    
+
         if(DEBUG)
         {
             for (const auto& record : database)
@@ -33,7 +18,7 @@ void* client_handler(void* arg, set<vector<string>> database) {
                 cout << "----------------------" << endl;
             }
         }
-    handleBindRequest(client_socket);
+    handleBindRequest(client_socket, database);
 
     return NULL;
 }
