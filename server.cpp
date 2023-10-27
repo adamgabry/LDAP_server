@@ -1,18 +1,3 @@
-// Standard C++ libraries
-#include <iostream>
-#include <fstream> // Include the necessary header for file operations
-#include <cstdlib>
-#include <thread>
-#include <cstring>
-#include <sstream>
-#include <string.h>
-#include <vector>
-#include <set>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <pthread.h>
 
 // Custom libraries
 #include "ldap_functions.h"
@@ -22,8 +7,8 @@
 void* client_handler(void* arg, set<vector<string>> database) {
     int client_socket = *((int*)arg);
     free(arg); // Free the allocated memory
-    
-        if(DEBUG)
+
+   /*     if(DEBUG)
         {
             for (const auto& record : database)
             {
@@ -32,10 +17,10 @@ void* client_handler(void* arg, set<vector<string>> database) {
                 cout << "email: " << record[2] << endl;
                 cout << "----------------------" << endl;
             }
-        }
-    handleBindRequest(client_socket);
-
-    return NULL;
+        }*/
+    ldap_functions ldap_start_binding(client_socket, database);
+    while(ldap_start_binding.check_ldap_FSM_state()); //while because we want to check all FSM states, and then close the socket
+    close(client_socket);
 }
 
 server::server(int port) 
