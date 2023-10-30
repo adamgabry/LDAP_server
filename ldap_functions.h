@@ -62,5 +62,7 @@ public:
     void sendBindResponse();
 
     int get_mess_length();
+
+    int reset_content(int var);
 };
 #endif

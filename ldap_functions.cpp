@@ -3,6 +3,7 @@
 #define LDAP_PACKET 0x30
 #define LDAP_PACKET_LENGTH 0x0c
 #define SIMPLE_BIND 0x01
+#define ASN_TAG_INTEGER 0x2
 
 #define BINDREQUEST 0x60
 #define BINDRESPONSE 0x61
@@ -22,7 +23,7 @@ ldap_functions::ldap_functions(int client_socket, set<vector<string>> data)
 }
 void ldap_functions::next_byte(int client_message,size_t amount){
     read(client_message,&byte_content, amount); //read one byte
-    byte_index++;
+    byte_index += amount;
 }
 
 
@@ -31,7 +32,7 @@ int ldap_functions::get_mess_length() {
     int length = byte_content & 0x7F;  // Initialize with the low 7 bits of the first byte
     next_byte(client_message_header, 1);  // Move to the next byte
 
-    if (length < 0x80) {
+    if (length < 0x81) {
         return length;
     }
 
@@ -49,6 +50,17 @@ int ldap_functions::get_mess_length() {
 }
 
 
+/// BREAKDOWN OF LDAP MESSAGE HEADER
+/*   30 0c 02 01 01 60 07 02 01 03 04 00 80 00
+*
+byte|    
+1   |30 - LDAP packet header -indicates LDAP message type
+2   |   0c - length of the message
+3   |      02 - messageID  
+4   |         01 - BindReqmess
+5   |            01 - simple bind
+6>  |               60 - type of ldap message (bindreq, searchreq, unbindreq)
+*/ 
 bool ldap_functions::check_ldap_FSM_state()
 {
     read(client_message_header,&byte_content, 1); //read one byte
@@ -61,12 +73,18 @@ bool ldap_functions::check_ldap_FSM_state()
     mess.lenght = get_mess_length();
 
     DEBUG_PRINT("LDAP packet length "<< dec << mess.lenght);
+
     DEBUG_PRINT("LDAP type "<< hex << byte_content); //here 0x2 is INTEGER, must be there
+    if(byte_content != ASN_TAG_INTEGER) return 0; //ignore(so return false)
     
-    next_byte(client_message_header, 2);     //moving 3 bytes to the 5th byte
-    byte_content = 0;
-    
+    next_byte(client_message_header, 1);    //  3rd byte message ID
+    mess.id = byte_content;                 //  get message id fction?
+    DEBUG_PRINT("mess id "<< hex << byte_content); 
+
     next_byte(client_message_header, 1);
+
+    next_byte(client_message_header, 1);
+
     mess.message_type = byte_content; //saving type of LDAP_message
     DEBUG_PRINT("LDAP mess type "<< hex << mess.message_type);
 
@@ -81,6 +99,13 @@ bool ldap_functions::choose_ldap_message()
         case BINDREQUEST:
             return handleBindRequest();
             break;
+        case SEARCHREQUEST:
+            printf("ASDASD");
+            return 0;
+            break;
+        case UNBINDREQUEST:
+            return 0;
+            break;
         default:
             return 0;
     }
@@ -88,32 +113,59 @@ bool ldap_functions::choose_ldap_message()
 
 bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmessage a read
 {
-
     // Construct and send the BindResponse
-    DEBUG_PRINT("End of the packet");
+
+    DEBUG_PRINT("----BIND----");
+
+    next_byte(client_message_header, 1);
+    DEBUG_PRINT("Bindreq length is: "<< hex << get_mess_length());
+
+    next_byte(client_message_header, 2);
+    DEBUG_PRINT("Version and authentification type: "<< hex << byte_content);
+    
+    if(!(byte_content == 0x201 || byte_content == 0x301)) return 0; //ldap v(2|3) and simple bind(1)
+    
+    byte_content = 0;
+
+    next_byte(client_message_header, 1); // Move to the next byte (DN length)
+    DEBUG_PRINT("DN length: " << hex << byte_content);
+
+    // Read the DN based on the DN length
+
+
+    //              !!!REDO!!! ig?
+    string dn = "";
+    for (int i = 0; i < get_mess_length(); i++) {
+        dn += byte_content;
+        next_byte(client_message_header, 1);
+    }
+    DEBUG_PRINT("Distinguished Name: " << dn);
+    DEBUG_PRINT("-----END OF BIND-----");
+
     sendBindResponse();
     //sleep(5);
+    DEBUG_PRINT("End of the packet");
     return true;
 }
 
 void ldap_functions::sendBindResponse() {
     // Construct the BindResponse
     char bind_response[1024];
-    const unsigned char bind_data[] = {0x30, 0x0c, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0a, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
+    const unsigned char bind_data[] = {0x30,  static_cast<unsigned char>(mess.lenght),  static_cast<unsigned char>(ASN_TAG_INTEGER), 0x01, static_cast<unsigned char>(mess.id), BINDRESPONSE, 0x07, 0x0a, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
     int bind_data_length = sizeof(bind_data);
 
     // Make sure bind_response has enough space for bind_data
     memcpy(bind_response, bind_data, bind_data_length);
 
-        if(DEBUG) std::cout << std::dec; //print in decimal
-        DEBUG_PRINT("BindResponse length: " << bind_data_length << "\nSent BindResponse to the client:");
-
-    for (int i = 0; i < bind_data_length; i++)
+    if(DEBUG)
     {
-        std::cout << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)(unsigned char)bind_response[i] << " ";
+        DEBUG_PRINT("BindResponse length: "<< dec << bind_data_length << "\nSent BindResponse to the client:");
+        for (int i = 0; i < bind_data_length; i++)
+        {
+            std::cout << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)(unsigned char)bind_response[i] << " ";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
-
     // Send the BindResponse to the client
     send(client_message_header, bind_response, bind_data_length, 0);
 }
