@@ -17,13 +17,13 @@ ldap_functions::ldap_functions(int client_socket, set<vector<string>> data)
     database = data;
     client_message_header = client_socket;  //just for checking header
     client_message_body = client_socket;    //checking body of message
-
     byte_index = 0;
     byte_content = 0;
 }
 void ldap_functions::next_byte(int client_message,size_t amount){
     read(client_message,&byte_content, amount); //read one byte
     byte_index += amount;
+    //DEBUG_PRINT("bytes read: " << dec << byte_index);
 }
 
 
@@ -35,7 +35,6 @@ int ldap_functions::get_mess_length() {
     if (length < 0x81) {
         return length;
     }
-
     int shift = 7;  // Number of bits to shift left
     while (byte_content & 0x80) {
         length |= ((byte_content & 0x7F) << shift);
@@ -89,7 +88,7 @@ bool ldap_functions::check_ldap_FSM_state()
     DEBUG_PRINT("LDAP mess type "<< hex << mess.message_type);
 
     if(choose_ldap_message()) return 1; //when everything ok, it has to return true
-    return 0;
+        return 0;
 }
 
 bool ldap_functions::choose_ldap_message()
@@ -100,7 +99,7 @@ bool ldap_functions::choose_ldap_message()
             return handleBindRequest();
             break;
         case SEARCHREQUEST:
-            printf("ASDASD");
+            DEBUG_PRINT("SEARCHREQUEST");
             return 0;
             break;
         case UNBINDREQUEST:
@@ -113,10 +112,8 @@ bool ldap_functions::choose_ldap_message()
 
 bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmessage a read
 {
-    // Construct and send the BindResponse
 
     DEBUG_PRINT("----BIND----");
-
     next_byte(client_message_header, 1);
     DEBUG_PRINT("Bindreq length is: "<< hex << get_mess_length());
 
@@ -133,24 +130,27 @@ bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmes
     // Read the DN based on the DN length
 
 
-    //              !!!REDO!!! ig?
     string dn = "";
-    for (int i = 0; i < get_mess_length(); i++) {
+    for (int i = 0; i < get_mess_length(); i++, next_byte(client_message_header, 1)) {
         dn += byte_content;
-        next_byte(client_message_header, 1);
+        DEBUG_PRINT(" byte content: " << byte_content);
     }
+    
     DEBUG_PRINT("Distinguished Name: " << dn);
+    byte_index = 0;
     DEBUG_PRINT("-----END OF BIND-----");
 
     sendBindResponse();
     //sleep(5);
     DEBUG_PRINT("End of the packet");
+
     return true;
 }
 
 void ldap_functions::sendBindResponse() {
     // Construct the BindResponse
     char bind_response[1024];
+    //                                        int to unsigned char
     const unsigned char bind_data[] = {0x30,  static_cast<unsigned char>(mess.lenght),  static_cast<unsigned char>(ASN_TAG_INTEGER), 0x01, static_cast<unsigned char>(mess.id), BINDRESPONSE, 0x07, 0x0a, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
     int bind_data_length = sizeof(bind_data);
 
