@@ -1,16 +1,5 @@
 #include "ldap_functions.h"
 
-#define LDAP_PACKET 0x30
-#define LDAP_PACKET_LENGTH 0x0c
-#define SIMPLE_BIND 0x01
-#define ASN_TAG_INTEGER 0x2
-
-#define BINDREQUEST 0x60
-#define BINDRESPONSE 0x61
-#define SEARCHREQUEST 0x63
-#define SEARCHRESENTRY 0x64
-#define SEARCHRESDONE 0x65
-#define UNBINDREQUEST 0x42
 
 ldap_functions::ldap_functions(int client_socket, set<vector<string>> data)
 {
@@ -67,6 +56,7 @@ bool ldap_functions::check_ldap_FSM_state()
     DEBUG_PRINT("LDAP packet type "<< hex << byte_content);
     if(byte_content != LDAP_PACKET) return 0; //ignore(so return false)
     
+    DEBUG_PRINT("LDAP packet type "<< hex << byte_content);
     next_byte(client_message_header, 1);
 
     mess.lenght = get_mess_length();
@@ -99,8 +89,7 @@ bool ldap_functions::choose_ldap_message()
             return handleBindRequest();
             break;
         case SEARCHREQUEST:
-            DEBUG_PRINT("SEARCHREQUEST");
-            return 0;
+            return handleSearchRequest();
             break;
         case UNBINDREQUEST:
             return 0;
@@ -169,6 +158,42 @@ void ldap_functions::sendBindResponse() {
     // Send the BindResponse to the client
     send(client_message_header, bind_response, bind_data_length, 0);
 }
+
+
+void ldap_functions::getDNcontent(int dn_length) {
+    dn = "";
+    next_byte(client_message_header, 1); // Move to the next byte (DN length)
+    for (int i = 0; i < dn_length; i++, next_byte(client_message_header, 1)) {
+        dn += byte_content;
+        DEBUG_PRINT("dn content: " << dn);
+    }
+}
+
+bool ldap_functions::handleSearchRequest()
+{
+    DEBUG_PRINT("----SEARCH----");
+    //next_byte(client_message_header, 1);
+    next_byte(client_message_header, 1);
+    DEBUG_PRINT(" LDAP Searchreq length is: "<< hex << get_mess_length());
+
+    //next_byte(client_message_header, 1);
+    DEBUG_PRINT("byte content: " << hex << byte_content);
+    if(byte_content != 0x04) return 0; //objectType
+
+    next_byte(client_message_header, 1);
+    int dn_length = get_mess_length();
+    DEBUG_PRINT("DN length:(dec) " << dec << dn_length);
+
+    getDNcontent(dn_length);
+    DEBUG_PRINT("Distinguished Name: " << dn);
+
+    next_byte(client_message_header, 1);
+    if(byte_content != 0x0a) return 0; 
+    // Read the DN based on the DN length
+    return true;
+}
+
+
 
 
 //bindresponse
