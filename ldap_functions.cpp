@@ -37,6 +37,29 @@ int ldap_functions::get_mess_length() {
     return length;
 }
 
+void ldap_functions::getDNcontent(int dn_length) {
+    dn = "";
+    next_byte(client_message_header, 1); //move from the byte with dn length content
+    for (int i = 0; i < dn_length - 1 ; i++) {
+        dn += byte_content;
+        next_byte(client_message_header, 1);
+        DEBUG_PRINT("dn content: " << dn);
+    }
+}
+
+int ldap_functions::next_byte_content_equals_to(int hex_value)
+{
+    next_byte(client_message_header, 1);
+    if(byte_content != hex_value) return 0;
+    return 1;
+}
+
+int ldap_functions::next_byte_content_bigger_than(int hex_value)
+{
+    next_byte(client_message_header, 1);
+    if(byte_content > hex_value) return 0;
+    return 1;
+}
 
 /// BREAKDOWN OF LDAP MESSAGE HEADER
 /*   30 0c 02 01 01 60 07 02 01 03 04 00 80 00
@@ -102,18 +125,21 @@ bool ldap_functions::choose_ldap_message()
 bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmessage a read
 {
 
-    DEBUG_PRINT("----BIND----");
+    DEBUG_PRINT("\n----BIND REQ----\n");
+
     next_byte(client_message_header, 1);
+
     DEBUG_PRINT("Bindreq length is: "<< hex << get_mess_length());
 
     next_byte(client_message_header, 2);
+
     DEBUG_PRINT("Version and authentification type: "<< hex << byte_content);
     
     if(!(byte_content == 0x201 || byte_content == 0x301)) return 0; //ldap v(2|3) and simple bind(1)
     
     byte_content = 0;
-
     next_byte(client_message_header, 1); // Move to the next byte (DN length)
+
     DEBUG_PRINT("DN length: " << hex << byte_content);
 
     // Read the DN based on the DN length
@@ -127,19 +153,19 @@ bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmes
     
     DEBUG_PRINT("Distinguished Name: " << dn);
     byte_index = 0;
-    DEBUG_PRINT("-----END OF BIND-----");
+    DEBUG_PRINT("\n-----END OF BIND REQ-----");
 
     sendBindResponse();
     //sleep(5);
-    DEBUG_PRINT("End of the packet");
+    DEBUG_PRINT("\nEnd of the packet");
 
     return true;
 }
-
-void ldap_functions::sendBindResponse() {
-    // Construct the BindResponse
+void ldap_functions::sendBindResponse() 
+{    
+    DEBUG_PRINT("\n-----START OF BIND RES----- \n");
     char bind_response[1024];
-    //                                        int to unsigned char
+                                              //int to unsigned char
     const unsigned char bind_data[] = {0x30,  static_cast<unsigned char>(mess.lenght),  static_cast<unsigned char>(ASN_TAG_INTEGER), 0x01, static_cast<unsigned char>(mess.id), BINDRESPONSE, 0x07, 0x0a, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
     int bind_data_length = sizeof(bind_data);
 
@@ -149,6 +175,7 @@ void ldap_functions::sendBindResponse() {
     if(DEBUG)
     {
         DEBUG_PRINT("BindResponse length: "<< dec << bind_data_length << "\nSent BindResponse to the client:");
+        
         for (int i = 0; i < bind_data_length; i++)
         {
             std::cout << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)(unsigned char)bind_response[i] << " ";
@@ -156,40 +183,59 @@ void ldap_functions::sendBindResponse() {
         std::cout << std::endl;
     }
     // Send the BindResponse to the client
+    DEBUG_PRINT("\n-----END OF BIND RES-----");
     send(client_message_header, bind_response, bind_data_length, 0);
 }
 
 
-void ldap_functions::getDNcontent(int dn_length) {
-    dn = "";
-    next_byte(client_message_header, 1); // Move to the next byte (DN length)
-    for (int i = 0; i < dn_length; i++, next_byte(client_message_header, 1)) {
-        dn += byte_content;
-        DEBUG_PRINT("dn content: " << dn);
-    }
-}
-
 bool ldap_functions::handleSearchRequest()
 {
-    DEBUG_PRINT("----SEARCH----");
-    //next_byte(client_message_header, 1);
-    next_byte(client_message_header, 1);
-    DEBUG_PRINT(" LDAP Searchreq length is: "<< hex << get_mess_length());
+    DEBUG_PRINT("\n----SEARCH----\n");
 
-    //next_byte(client_message_header, 1);
-    DEBUG_PRINT("byte content: " << hex << byte_content);
+    next_byte(client_message_header, 1);
+
+    DEBUG_PRINT(" LDAP Searchreq length is: "<< hex << get_mess_length());
+    DEBUG_PRINT_BYTE_CONTENT;
+
     if(byte_content != 0x04) return 0; //objectType
 
     next_byte(client_message_header, 1);
     int dn_length = get_mess_length();
+    
     DEBUG_PRINT("DN length:(dec) " << dec << dn_length);
 
+    // Read the DN based on the DN length
     getDNcontent(dn_length);
+    
     DEBUG_PRINT("Distinguished Name: " << dn);
 
+    if(byte_content != 0x0a) return 0; //
+    
+    DEBUG_PRINT_BYTE_CONTENT;
+
     next_byte(client_message_header, 1);
-    if(byte_content != 0x0a) return 0; 
-    // Read the DN based on the DN length
+    if(byte_content != 0x01) return 0; //
+
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    //baseObject (0): Search only the base object.
+    //singleLevel (1): Search all entries at one level below the base object.
+    //wholeSubtree (2): Search the whole subtree rooted at the base object.
+    if(!next_byte_content_bigger_than(0x02)) return 0; //scope
+
+    DEBUG_PRINT_BYTE_CONTENT;
+    
+    if(!next_byte_content_equals_to(0x0a)) return 0; //derefAliases
+
+    DEBUG_PRINT_BYTE_CONTENT;
+    
+    if(!next_byte_content_equals_to(0x01)) return 0; //dereferenceAliases (not implemented by LDAPv2 but still shouldnt come bigger than 3)
+    
+    DEBUG_PRINT_BYTE_CONTENT;
+    
+    if(!next_byte_content_bigger_than(0x03)) return 0; //dereferenceAliases (not implemented by LDAPv2 but still shouldnt come bigger than 3)
+
+
     return true;
 }
 

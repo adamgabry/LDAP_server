@@ -34,6 +34,9 @@ using namespace std;
     #define DEBUG_PRINT(message) // Define as nothing when debugging is disabled
 #endif
 
+//macro for debug printing byte content
+#define DEBUG_PRINT_BYTE_CONTENT DEBUG_PRINT("byte content: " << hex << byte_content);
+
 class message
     {
     public:
@@ -75,10 +78,15 @@ public:
 
     bool handleSearchRequest();
 
+    /// @brief Reads the DN content from the client message.
+    /// @brief Already makes ready the byte index to the next byte after the DN content
+    /// @param dn_length based on the length of the DN
     void getDNcontent(int lenght);
 
     int get_mess_length();
 
-    int reset_content(int var);
+    int next_byte_content_equals_to(int hex_value);
+
+    int next_byte_content_bigger_than(int hex_value);
 };
 #endif

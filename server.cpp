@@ -20,6 +20,7 @@ void* client_handler(void* arg, set<vector<string>> database) {
         }*/
     ldap_functions ldap_start_binding(client_socket, database);
     while(ldap_start_binding.check_ldap_FSM_state()); //while because we want to check all FSM states, and then close the socket
+    DEBUG_PRINT("Closing socket");
     close(client_socket);
 }
 
