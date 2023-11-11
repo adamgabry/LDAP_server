@@ -1,4 +1,4 @@
-#include "ldap_functions.h"
+#include "ldap_functions.hpp"
 
 
 ldap_functions::ldap_functions(int client_socket, set<vector<string>> data)
@@ -50,6 +50,7 @@ void ldap_functions::getDNcontent(int dn_length) {
 int ldap_functions::next_byte_content_equals_to(int hex_value)
 {
     next_byte(client_message_header, 1);
+    DEBUG_PRINT_BYTE_CONTENT;
     if(byte_content != hex_value) return 0;
     return 1;
 }
@@ -57,6 +58,7 @@ int ldap_functions::next_byte_content_equals_to(int hex_value)
 int ldap_functions::next_byte_content_bigger_than(int hex_value)
 {
     next_byte(client_message_header, 1);
+    DEBUG_PRINT_BYTE_CONTENT;
     if(byte_content > hex_value) return 0;
     return 1;
 }
@@ -197,7 +199,7 @@ bool ldap_functions::handleSearchRequest()
     DEBUG_PRINT(" LDAP Searchreq length is: "<< hex << get_mess_length());
     DEBUG_PRINT_BYTE_CONTENT;
 
-    if(byte_content != 0x04) return 0; //objectType
+    if(byte_content != 0x04) return 0; // T objectType - octet string
 
     next_byte(client_message_header, 1);
     int dn_length = get_mess_length();
@@ -209,31 +211,29 @@ bool ldap_functions::handleSearchRequest()
     
     DEBUG_PRINT("Distinguished Name: " << dn);
 
-    if(byte_content != 0x0a) return 0; //
+    //getDNcontent already sets next byte
+    if(byte_content != 0x0a) return 0; //T
     
     DEBUG_PRINT_BYTE_CONTENT;
 
-    next_byte(client_message_header, 1);
-    if(byte_content != 0x01) return 0; //
-
-    DEBUG_PRINT_BYTE_CONTENT;
+    if(!next_byte_content_equals_to(0x01)) return 0;//L
 
     //baseObject (0): Search only the base object.
     //singleLevel (1): Search all entries at one level below the base object.
     //wholeSubtree (2): Search the whole subtree rooted at the base object.
-    if(!next_byte_content_bigger_than(0x02)) return 0; //scope
+    if(!next_byte_content_bigger_than(0x02)) return 0; // V scope
+    
+    if(!next_byte_content_equals_to(0x0a)) return 0; //T
+    
+    if(!next_byte_content_equals_to(0x01)) return 0; //L
+    
+    //dereferenceAliases default = 0 (not implemented by LDAPv2 but still shouldnt come bigger than 3)
+    if(!next_byte_content_bigger_than(0x03)) return 0; // V
 
-    DEBUG_PRINT_BYTE_CONTENT;
-    
-    if(!next_byte_content_equals_to(0x0a)) return 0; //derefAliases
+    if(!next_byte_content_equals_to(0x02)) return 0; // T SizeLimit
 
-    DEBUG_PRINT_BYTE_CONTENT;
-    
-    if(!next_byte_content_equals_to(0x01)) return 0; //dereferenceAliases (not implemented by LDAPv2 but still shouldnt come bigger than 3)
-    
-    DEBUG_PRINT_BYTE_CONTENT;
-    
-    if(!next_byte_content_bigger_than(0x03)) return 0; //dereferenceAliases (not implemented by LDAPv2 but still shouldnt come bigger than 3)
+    next_byte(client_message_header, 1);
+
 
 
     return true;

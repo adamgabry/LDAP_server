@@ -1,7 +1,7 @@
 
 // Custom libraries
-#include "ldap_functions.h"
-#include "server.h"
+#include "ldap_functions.hpp"
+#include "server.hpp"
 
 
 void* client_handler(void* arg, set<vector<string>> database) {

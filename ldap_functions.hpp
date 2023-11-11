@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <iomanip> 
 #include <sys/socket.h>
-#include "ldap_functions.h"
 
 #define PORT 389
 #define DEBUG 1
@@ -44,6 +43,8 @@ class message
         int id;
         int lenght;
         int message_type;
+        int size_limit;
+        int time_limit;
         int version;
     };
 
