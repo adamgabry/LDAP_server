@@ -8,14 +8,16 @@
 #include <set>
 #include <unistd.h>
 #include <iomanip> 
+#include <map>
 #include <sys/socket.h>
 
 #define PORT 389
 #define DEBUG 1
 #define LDAP_PACKET 0x30
-#define LDAP_PACKET_LENGTH 0x0c
 #define SIMPLE_BIND 0x01
-#define ASN_TAG_INTEGER 0x2
+
+#define ASN_TAG_INTEGER 0x02
+#define ASN_TAG_BOOL 0x01
 
 #define BINDREQUEST 0x60
 #define BINDRESPONSE 0x61
@@ -23,6 +25,14 @@
 #define SEARCHRESENTRY 0x64
 #define SEARCHRESDONE 0x65
 #define UNBINDREQUEST 0x42
+
+#define SIZE_LIMIT 200
+
+#define AND 0xA0
+#define OR 0xA1
+#define NOT 0xA2
+#define EQUALITY_MATCH 0xA3
+#define SUBSTRING 0xA4
 
 using namespace std;
 
@@ -35,6 +45,21 @@ using namespace std;
 
 //macro for debug printing byte content
 #define DEBUG_PRINT_BYTE_CONTENT DEBUG_PRINT("byte content: " << hex << byte_content);
+
+
+class Filter {
+public:
+    int type = -1; /**< Filter type **/
+    int length; /**< Length of filter (num of char) **/
+    vector<Filter> filters; /**< Stored subfilters **/
+    /**< Map for names of AttrDesc **/
+    map<string, int> known = {{"cn", 0}, {"commonname", 0},
+                              {"uid", 1}, {"userid", 1},
+                              {"mail", 2}};
+    string what; /**< AttrDesc **/
+    int w; /**< Index of AttrDesc **/
+    string value; /**< AttrValue **/
+};
 
 class message
     {
@@ -50,22 +75,18 @@ class message
 
 class ldap_functions{
 private:
-
-    int byte_index;     //act
-    /*
-    *header for checking message in check_ldap_FSM_state
-    */
-    int client_message_header; //fd
+    void next_byte(int client_message, size_t amount);
+    Filter filter;
+    
+public:
+    int byte_index;     //actual byte index
+    int client_message_header; //header for checking message in check_ldap_FSM_state
     int client_message_body;
     int byte_content; //ch
     string dn;      //dn content for search request
-
     set<vector<string>> database;
     message mess;
 
-
-    void next_byte(int client_message, size_t amount);
-public:
     /*constructor*/
     ldap_functions(int client_socket, set<vector<string>> database);
 
@@ -89,5 +110,10 @@ public:
     int next_byte_content_equals_to(int hex_value);
 
     int next_byte_content_bigger_than(int hex_value);
+
+    Filter get_filter_content();
+
+    int get_limit();
+
 };
 #endif

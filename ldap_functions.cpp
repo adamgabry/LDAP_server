@@ -9,11 +9,12 @@ ldap_functions::ldap_functions(int client_socket, set<vector<string>> data)
     byte_index = 0;
     byte_content = 0;
 }
+
 void ldap_functions::next_byte(int client_message,size_t amount){
     read(client_message,&byte_content, amount); //read one byte
     byte_index += amount;
     //DEBUG_PRINT("bytes read: " << dec << byte_index);
-}
+} 
 
 
 //MAY NOT BE CORRECT FOR LONGER THAN 0x80
@@ -25,16 +26,18 @@ int ldap_functions::get_mess_length() {
         return length;
     }
     int shift = 7;  // Number of bits to shift left
+
+    //the MSB in octet represents whether there are more octets to follow
+    //if the 7th bit is set to 1, so we have to read more bytes
     while (byte_content & 0x80) {
         length |= ((byte_content & 0x7F) << shift);
         shift += 7;
         next_byte(client_message_header, 1);  // Move to the next byte
     }
-
     // Add the final byte (low 7 bits) to the length
     length |= (byte_content << shift);
 
-    return length;
+    return length ;
 }
 
 void ldap_functions::getDNcontent(int dn_length) {
@@ -55,7 +58,7 @@ int ldap_functions::next_byte_content_equals_to(int hex_value)
     return 1;
 }
 
-int ldap_functions::next_byte_content_bigger_than(int hex_value)
+int ldap_functions::next_byte_content_bigger_than(int hex_value) 
 {
     next_byte(client_message_header, 1);
     DEBUG_PRINT_BYTE_CONTENT;
@@ -81,7 +84,7 @@ bool ldap_functions::check_ldap_FSM_state()
     DEBUG_PRINT("LDAP packet type "<< hex << byte_content);
     if(byte_content != LDAP_PACKET) return 0; //ignore(so return false)
     
-    DEBUG_PRINT("LDAP packet type "<< hex << byte_content);
+    DEBUG_PRINT("LDAP packet type "<< hex << byte_content); 
     next_byte(client_message_header, 1);
 
     mess.lenght = get_mess_length();
@@ -124,6 +127,28 @@ bool ldap_functions::choose_ldap_message()
     }
 } 
 
+int ldap_functions::get_limit()
+{
+    
+    next_byte(client_message_header, 1); //L
+
+    int num_of_bytes = byte_content; 
+    if(num_of_bytes <= 0) return -1; //cant be negative or zero
+
+    next_byte(client_message_header, 1); //V
+    int limit_value = 0;
+    /*
+    shift = number of bits to shift
+    condition = number of bytes shifted is not negative
+    then we decrement shift by 8(simulation of moving to the next byte for condition) and move to the next byte
+    */
+    for (int shift = (num_of_bytes - 1) * 8; shift >= 0; shift -= 8, next_byte(client_message_header, 1)) {
+        limit_value += byte_content << shift; //constructing larger integer from a sequence of bytes with bit shifting
+    }
+    DEBUG_PRINT("limit value: " << dec << limit_value);
+    return limit_value;
+}
+
 bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmessage a read
 {
 
@@ -139,7 +164,8 @@ bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmes
     
     if(!(byte_content == 0x201 || byte_content == 0x301)) return 0; //ldap v(2|3) and simple bind(1)
     
-    byte_content = 0;
+    byte_content = 0;// reseting
+
     next_byte(client_message_header, 1); // Move to the next byte (DN length)
 
     DEBUG_PRINT("DN length: " << hex << byte_content);
@@ -172,7 +198,7 @@ void ldap_functions::sendBindResponse()
     int bind_data_length = sizeof(bind_data);
 
     // Make sure bind_response has enough space for bind_data
-    memcpy(bind_response, bind_data, bind_data_length);
+    memcpy(bind_response, bind_data, bind_data_length );
 
     if(DEBUG)
     {
@@ -202,12 +228,12 @@ bool ldap_functions::handleSearchRequest()
     if(byte_content != 0x04) return 0; // T objectType - octet string
 
     next_byte(client_message_header, 1);
-    int dn_length = get_mess_length();
+    int dn_length = get_mess_length();  //L
     
     DEBUG_PRINT("DN length:(dec) " << dec << dn_length);
 
     // Read the DN based on the DN length
-    getDNcontent(dn_length);
+    getDNcontent(dn_length);    //V
     
     DEBUG_PRINT("Distinguished Name: " << dn);
 
@@ -219,9 +245,11 @@ bool ldap_functions::handleSearchRequest()
     if(!next_byte_content_equals_to(0x01)) return 0;//L
 
     //baseObject (0): Search only the base object.
+    //for THIS PROJECT is enough base 0;
+
     //singleLevel (1): Search all entries at one level below the base object.
     //wholeSubtree (2): Search the whole subtree rooted at the base object.
-    if(!next_byte_content_bigger_than(0x02)) return 0; // V scope
+    if(!next_byte_content_bigger_than(0x02)) return 0; // V scope - now set to to 2 for testing.
     
     if(!next_byte_content_equals_to(0x0a)) return 0; //T
     
@@ -229,50 +257,30 @@ bool ldap_functions::handleSearchRequest()
     
     //dereferenceAliases default = 0 (not implemented by LDAPv2 but still shouldnt come bigger than 3)
     if(!next_byte_content_bigger_than(0x03)) return 0; // V
+    //SizeLimit
+    if(!next_byte_content_equals_to(ASN_TAG_INTEGER)) return 0; // T SizeLimit
 
-    if(!next_byte_content_equals_to(0x02)) return 0; // T SizeLimit
+    mess.size_limit = get_limit(); //L,V
+    if( mess.size_limit > SIZE_LIMIT || mess.size_limit < 0) return 0; //cant be negative and overreach implemented limit
+    DEBUG_PRINT("Size limit: " << dec << mess.size_limit);
 
-    next_byte(client_message_header, 1);
+    //TimeLimit
+    if(byte_content != ASN_TAG_INTEGER) return 0; //T
+    mess.time_limit = get_limit(); //L,V
+    DEBUG_PRINT("Time limit: " << dec << mess.time_limit);
+
+    //TypesOnly
+    if(byte_content != ASN_TAG_BOOL) return 0; //T
+    if(!next_byte_content_equals_to(0x01)) return 0; //L
+    next_byte(client_message_header, 1); //V
+    if (byte_content != 0x00 && byte_content != 0x01) return 0; //bool
+    //just checking the correctness, dont need to save it for LDAPv2
+
+    //FILTERS
+    get_filter_content();
+
 
 
 
     return true;
 }
-
-
-
-
-//bindresponse
-    /*
-    char bind_request[1024];
-    int bind_request_length;
-
-    // Receive the BindRequest from the client
-    bind_request_length = recv(client_message_header, bind_request, sizeof(bind_request), 0);
-    if (bind_request_length <= 0) 
-    {
-        perror("Error receiving BindRequest");
-        close(client_message_header);
-        return;
-    }
-
-    // Print the BindRequest in hex format
-    #ifdef DEBUG
-        cout << "Received BindRequest from client:" << endl;
-        for (int i = 0; i < bind_request_length; i++) {
-            cout << hex << setw(2) << setfill('0') << (unsigned int)(unsigned char)bind_request[i] << " ";
-        }
-        cout << endl;
-    #endif
-
-    // Parse the BindRequest
-    // int version = bind_request[0];
-    int dn_length = bind_request[1];
-    char dn[1024];
-    memcpy(dn, &bind_request[2], dn_length);
-    dn[dn_length] = '\0';
-    int credentials_length = bind_request[2 + dn_length + 1];
-    char credentials[1024];
-    memcpy(credentials, &bind_request[2 + dn_length + 2], credentials_length);
-    credentials[credentials_length] = '\0';
-*/

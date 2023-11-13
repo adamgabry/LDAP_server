@@ -113,6 +113,7 @@ void server::connect_clients() {
 
         // Start handling the communication with the client in a new thread
         thread(client_handler, client_socket_ptr, database).detach(); // Detach the thread to make it run independently
+        
     }
     close(server_socket);
 }
