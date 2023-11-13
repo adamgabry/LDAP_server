@@ -16,8 +16,10 @@
 #define LDAP_PACKET 0x30
 #define SIMPLE_BIND 0x01
 
-#define ASN_TAG_INTEGER 0x02
 #define ASN_TAG_BOOL 0x01
+#define ASN_TAG_INTEGER 0x02
+#define ASN_TAG_BIT_STRING 0x03
+#define ASN_TAG_OCTETSTRING 0x04
 
 #define BINDREQUEST 0x60
 #define BINDRESPONSE 0x61
@@ -49,16 +51,23 @@ using namespace std;
 
 class Filter {
 public:
-    int type = -1; /**< Filter type **/
-    int length; /**< Length of filter (num of char) **/
+    int filter_type; //= -1; // securing that filter_type is not empty and not equal to any filter type
+    
+    int attr_desc_length;
+    string attr_desc; // = "";
+
+    int attr_value_length;
+    string attr_value; /**< AttrValue **/
+
+    int filter_length; 
+
+    //TODO: redo this
     vector<Filter> filters; /**< Stored subfilters **/
     /**< Map for names of AttrDesc **/
     map<string, int> known = {{"cn", 0}, {"commonname", 0},
                               {"uid", 1}, {"userid", 1},
                               {"mail", 2}};
-    string what; /**< AttrDesc **/
     int w; /**< Index of AttrDesc **/
-    string value; /**< AttrValue **/
 };
 
 class message
@@ -98,6 +107,8 @@ public:
 
     void sendBindResponse();
 
+    void debug_print_constructed_response(int bind_data_length, char* bind_response);
+
     bool handleSearchRequest();
 
     /// @brief Reads the DN content from the client message.
@@ -109,9 +120,12 @@ public:
 
     int next_byte_content_equals_to(int hex_value);
 
+    int this_byte_content_equals_to(int hex_value);
+
     int next_byte_content_bigger_than(int hex_value);
 
     Filter get_filter_content();
+    Filter get_filter();
 
     int get_limit();
 

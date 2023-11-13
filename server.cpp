@@ -87,10 +87,14 @@ void server::parse_database(string input_file)
         {
             cerr << "Failed to parse the line: " << line << endl;
         }
-        
-        // for (const string& item : data) {
-        //    cout << item << endl;
-        //}
+        /*
+        if(DEBUG)
+        {
+            for (const string& item : data) {
+                cout << item << endl;
+            }
+        }
+        */
     }
 }
 
@@ -113,7 +117,8 @@ void server::connect_clients() {
 
         // Start handling the communication with the client in a new thread
         thread(client_handler, client_socket_ptr, database).detach(); // Detach the thread to make it run independently
-        
+
+        // Free the memory allocated for client_socket_ptr
     }
     close(server_socket);
 }
