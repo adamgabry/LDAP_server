@@ -1,7 +1,7 @@
 
 // Custom libraries
-#include "ldap_functions.h"
-#include "server.h"
+#include "ldap_functions.hpp"
+#include "server.hpp"
 
 
 void* client_handler(void* arg, set<vector<string>> database) {
@@ -20,6 +20,7 @@ void* client_handler(void* arg, set<vector<string>> database) {
         }*/
     ldap_functions ldap_start_binding(client_socket, database);
     while(ldap_start_binding.check_ldap_FSM_state()); //while because we want to check all FSM states, and then close the socket
+    DEBUG_PRINT("Closing socket");
     close(client_socket);
 }
 
@@ -86,10 +87,14 @@ void server::parse_database(string input_file)
         {
             cerr << "Failed to parse the line: " << line << endl;
         }
-        
-        // for (const string& item : data) {
-        //    cout << item << endl;
-        //}
+        /*
+        if(DEBUG)
+        {
+            for (const string& item : data) {
+                cout << item << endl;
+            }
+        }
+        */
     }
 }
 
@@ -112,6 +117,8 @@ void server::connect_clients() {
 
         // Start handling the communication with the client in a new thread
         thread(client_handler, client_socket_ptr, database).detach(); // Detach the thread to make it run independently
+        DEBUG_PRINT("Detached thread");
+        // Free the memory allocated for client_socket_ptr
     }
     close(server_socket);
 }

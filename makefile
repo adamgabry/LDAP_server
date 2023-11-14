@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -Wall -g
 
 # Add your source files here
-SOURCES = server.cpp ldap_functions.cpp
+SOURCES = server.cpp ldap_functions.cpp ldap_filters.cpp processing_help_functions.cpp
 
 # Generate object file names from source files
 OBJECTS = $(SOURCES:.cpp=.o)
