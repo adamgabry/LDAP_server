@@ -117,7 +117,7 @@ void server::connect_clients() {
 
         // Start handling the communication with the client in a new thread
         thread(client_handler, client_socket_ptr, database).detach(); // Detach the thread to make it run independently
-
+        DEBUG_PRINT("Detached thread");
         // Free the memory allocated for client_socket_ptr
     }
     close(server_socket);

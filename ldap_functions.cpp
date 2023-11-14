@@ -29,7 +29,6 @@ bool ldap_functions::check_ldap_FSM_state()
     DEBUG_PRINT("LDAP packet type "<< hex << byte_content);
     if(byte_content != LDAP_PACKET) return 0; //ignore(so return false)
     
-    DEBUG_PRINT("LDAP packet type "<< hex << byte_content); 
     next_byte(client_message_header, 1);
 
     mess.lenght = get_mess_length();
@@ -65,6 +64,8 @@ bool ldap_functions::choose_ldap_message()
             return handleSearchRequest();
             break;
         case UNBINDREQUEST:
+            next_byte(client_message_header, 1);
+            DEBUG_PRINT("\n UNBINDREQUEST \n");
             return 0;
             break;
         default:
@@ -211,11 +212,44 @@ bool ldap_functions::handleSearchRequest()
 
     search_entry();
     search_res_done();
-    //search_res_entry();
 
     //clearing the rest of the buffer for memory leaks, because it is used in new thread
-    cin >> client_message_header;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    //cin >> client_message_header;
+    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
+
+    next_byte(client_message_header, 1); //T
+    DEBUG_PRINT_BYTE_CONTENT;
 
     return true;
 }
@@ -239,24 +273,12 @@ void ldap_functions::search_entry()
     }
 }
 
-void ldap_functions::search_res_entry() 
+void ldap_functions::search_res_done()
 {
-    vector <string> wh = {"cn", "uid", "mail"};
-    for (auto i: filters_applied) {
-        string res = "";
-        for (int a = 0; a < 3; a++) {
-            string value = string(1, 0x04) + LV_string(i[a]); // 0x04 ll meno
-            value = string(1, 0x31) + LV_string(value);
-            string what = string(1, 0x04) + LV_string(wh[a]);
-            res += string(1, 0x30) + LV_string(what + value);
-        }
-    }
-}
-
-void ldap_functions::search_res_done() 
-{
+    DEBUG_PRINT("\n-----START OF SEARCH RES DONE-----\n");
     string res = {0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
     res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(2) + string(1, 0x65) + LV_string(res));
     DEBUG_PRINT("res: " << res);
     send(client_message_header, res.c_str(), res.length(), 0);
+    DEBUG_PRINT("\n-----END OF SEARCH RES DONE-----\n");
 }
