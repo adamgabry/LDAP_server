@@ -76,20 +76,26 @@ Filter ldap_functions::get_filter() {
     return filter;
     // Access functions and perform operations...
 }
-/*
-set<vector<string>> performSearch(Filter f) {
-    vector<string> result;
+
+set<vector<string>> ldap_functions::performSearch(Filter f) {
+    set<vector<string>> result;
+    DEBUG_PRINT("\n---performSearch---\n");
     if(f.filter_type == EQUALITY_MATCH){
-        for (const auto entry : database) {
+        DEBUG_PRINT("database size: " << database.size());
+        for (auto entry : database) {
+            DEBUG_PRINT("entry: " << entry[1]);
             // Check if the attributeDesc matches the entry's attribute
-            if (entry.size() > 1 && entry[1] == f.attr_desc) {
-                // Check if the assertionValue matches the entry's value
-                if (entry.size() > 2 && entry[2] == assertionValue) {
-                    result.push_back(entry);
+
+            if (entry.size() > 1 && entry[1] == f.attr_value) {
+                DEBUG_PRINT("got here");
+                vector<string> entry_vec;
+                for (auto& e : entry) {
+                    entry_vec.emplace_back(e);
                 }
+                result.insert(entry_vec);  
             }
         }
     }
+    DEBUG_PRINT("result size: " << result.size());
     return result;
 }
-*/

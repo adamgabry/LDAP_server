@@ -10,9 +10,10 @@
 #include <iomanip> 
 #include <map>
 #include <sys/socket.h>
+#include <limits>
+#include <math.h>
 
 #define PORT 389
-#define DEBUG 1
 #define LDAP_PACKET 0x30
 #define SIMPLE_BIND 0x01
 
@@ -38,15 +39,18 @@
 
 using namespace std;
 
+#define DEBUG 1
+
 //macro for DEBUG printing
 #ifdef DEBUG
     #define DEBUG_PRINT(message) std::cout << message << std::endl
+    #define DEBUG_PRINT_BYTE_CONTENT DEBUG_PRINT("byte content: " << hex << byte_content);
     #else
     #define DEBUG_PRINT(message) // Define as nothing when debugging is disabled
+    #define DEBUG_PRINT_BYTE_CONTENT DEBUG_PRINT();
 #endif
 
 //macro for debug printing byte content
-#define DEBUG_PRINT_BYTE_CONTENT DEBUG_PRINT("byte content: " << hex << byte_content);
 
 
 class Filter {
@@ -54,13 +58,12 @@ public:
     int filter_type; //= -1; // securing that filter_type is not empty and not equal to any filter type
     
     int attr_desc_length;
-    string attr_desc; // = "";
+    string attr_desc; 
 
     int attr_value_length;
-    string attr_value; /**< AttrValue **/
+    string attr_value; 
 
     int filter_length; 
-
     //TODO: redo this
     vector<Filter> filters; /**< Stored subfilters **/
     /**< Map for names of AttrDesc **/
@@ -95,6 +98,7 @@ public:
     string dn;      //dn content for search request
     set<vector<string>> database;
     message mess;
+    set<vector<string>> filters_applied; //all filters applied to the database
 
     /*constructor*/
     ldap_functions(int client_socket, set<vector<string>> database);
@@ -106,6 +110,12 @@ public:
     bool handleBindRequest();
 
     void sendBindResponse();
+
+    void search_entry();
+
+    void search_res_entry();
+
+    void search_res_done();
 
     void debug_print_constructed_response(int bind_data_length, char* bind_response);
 
@@ -125,8 +135,15 @@ public:
     int next_byte_content_bigger_than(int hex_value);
 
     Filter get_filter_content();
+
     Filter get_filter();
 
+    set<vector<string>> performSearch(Filter f);
+
+    string LV_string(string s);
+
+    string LV_id(int num);
+    
     int get_limit();
 
 };

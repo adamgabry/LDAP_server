@@ -197,8 +197,66 @@ bool ldap_functions::handleSearchRequest()
     //FILTERS
     filter = get_filter();
 
+    ///@brief all values that passed the filter
+    filters_applied = performSearch(filter);
+    
+    if(DEBUG)
+    {
+        for (auto i: filters_applied) {
+            if (i.size() >= 3) {
+            cout << i[0] << " " << i[1] << " " << i[2] << endl;     
+            }
+        }
+    }
 
+    search_entry();
+    search_res_done();
+    //search_res_entry();
 
+    //clearing the rest of the buffer for memory leaks, because it is used in new thread
+    cin >> client_message_header;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     return true;
+}
+
+void ldap_functions::search_entry()
+{
+    DEBUG_PRINT("\n-----START OF SEARCH RES ENTRY-----\n");
+
+    vector<string> entry = {"cn", "uid", "mail"};;
+    // Iterate over each filter that was applied
+    for (auto filter : filters_applied) {
+        string res = "";
+        for(int a = 0; a < entry.size(); a++)
+        {
+            //the newlines are coming from here;
+            res += string(1, 0x30) + LV_string(string(1, 0x04) + LV_string(entry[a]) + string(1, 0x31) + LV_string(string(1, 0x04) + LV_string(filter[a])));
+        }
+        res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(2) + string(1, 0x64) + LV_string(string(1, 0x04) + LV_string("uid=" + filter[1]) + string(1, 0x30) + LV_string(res)));
+        DEBUG_PRINT("res: " << res);
+        send(client_message_header, res.c_str(), res.length(), 0);
+    }
+}
+
+void ldap_functions::search_res_entry() 
+{
+    vector <string> wh = {"cn", "uid", "mail"};
+    for (auto i: filters_applied) {
+        string res = "";
+        for (int a = 0; a < 3; a++) {
+            string value = string(1, 0x04) + LV_string(i[a]); // 0x04 ll meno
+            value = string(1, 0x31) + LV_string(value);
+            string what = string(1, 0x04) + LV_string(wh[a]);
+            res += string(1, 0x30) + LV_string(what + value);
+        }
+    }
+}
+
+void ldap_functions::search_res_done() 
+{
+    string res = {0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
+    res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(2) + string(1, 0x65) + LV_string(res));
+    DEBUG_PRINT("res: " << res);
+    send(client_message_header, res.c_str(), res.length(), 0);
 }

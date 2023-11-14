@@ -38,7 +38,7 @@ int ldap_functions::get_mess_length() {
     length = byte_content & 0x7F;  // Initialize with the low 7 bits of the first byte
     next_byte(client_message_header, 1);  // Move to the next byte
 
-    if (length < 0x81) {
+    if (length < 128 ) {
         return length;
     }
     int shift = 7;  // Number of bits to shift left
@@ -100,4 +100,61 @@ void ldap_functions::debug_print_constructed_response(int bind_data_length, char
         }
         std::cout << std::endl;
     }
+}
+
+/// @brief if lengt is < 128: the length is split into multiple 7-bit chunks and each chunk is added to the LV (Length Value) variable. The LV variable is used to store the encoded length of the message.This code is part of a function that is used to encode the length of a message in a specific format.
+/// @param s 
+/// @return 
+string ldap_functions::LV_string(string s) {
+    string LV = "";
+    unsigned int length = s.length();
+
+    if (length < 128) 
+    {
+        LV += static_cast<unsigned char>(length);
+    } 
+    else 
+    {
+        // Handle cases where length is greater than or equal to 128
+        while (length > 0) 
+        {
+            unsigned char byte = static_cast<unsigned char>(length & 0x7F);
+            length = length >> 7;       
+            byte |= 0x80;       // Set the high bit to indicate that more bytes will follow
+            LV = string(1, byte) + LV;
+        }
+    }
+    LV += s;
+    //for (unsigned char byte : LV) {
+    //    cout << hex << setw(2) << setfill('0') << static_cast<int>(byte);
+    //}
+    return LV;
+}
+
+string ldap_functions::LV_id(int num) 
+{
+    string result = "";
+    int tmp = 0;
+    int original_num = num;
+    while (num != 0) 
+    {
+        num = num / 256;
+        tmp++;
+    }
+    num = original_num; // restore the original value of num
+    result += static_cast<unsigned char>(tmp);
+    for (int i = tmp - 1; i >= 0; i--) //starts from the most significant byte
+    {
+        unsigned char r = (num >> (i * 8)) & 0xFF; //shifts the required byte into the least significant position and masks off the rest of the bits
+        result += r;
+    }
+    /*
+    // Print the result in hexadecimal
+    for (unsigned char c : result) 
+    {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(c);
+    }
+    std::cout << std::endl;
+    */
+    return result;
 }
