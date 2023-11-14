@@ -66,9 +66,18 @@ void ldap_functions::getDNcontent(int dn_length) {
     }
 }
 
+string ldap_functions::get_string(int length)
+{
+    string s = "";
+    for(int i = 0; i < length; i++, next_byte(client_message_header, 1))
+    {
+    s += byte_content;
+    }
+    return s;
+}
+
 int ldap_functions::get_limit()
 {
-    
     next_byte(client_message_header, 1); //L
 
     int num_of_bytes = byte_content; 

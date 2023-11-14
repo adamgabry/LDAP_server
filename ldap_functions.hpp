@@ -12,16 +12,21 @@
 #include <sys/socket.h>
 #include <limits>
 #include <math.h>
+#include <regex>
 
 #define PORT 389
 #define LDAP_PACKET 0x30
 #define SIMPLE_BIND 0x01
 
+//ASN TAGS
+#define ASN_TAG_EOC 0x00
 #define ASN_TAG_BOOL 0x01
 #define ASN_TAG_INTEGER 0x02
 #define ASN_TAG_BIT_STRING 0x03
 #define ASN_TAG_OCTETSTRING 0x04
+#define BER_TAG_SEQUENCE 0x30
 
+//LDAP MESSAGE TYPES
 #define BINDREQUEST 0x60
 #define BINDRESPONSE 0x61
 #define SEARCHREQUEST 0x63
@@ -29,14 +34,21 @@
 #define SEARCHRESDONE 0x65
 #define UNBINDREQUEST 0x42
 
+//LDAP SizeLimit
 #define SIZE_LIMIT 200
 
+//FILTERS
 #define AND 0xA0
 #define OR 0xA1
 #define NOT 0xA2
 #define EQUALITY_MATCH 0xA3
 #define SUBSTRING 0xA4
 
+#define FILTER_INITIAL 0x80
+#define FILTER_ANY 0x81
+#define FILTER_FINAL 0x82
+
+#define FILTER_ANY_SIGN ".*"
 using namespace std;
 
 #define DEBUG 1
@@ -52,7 +64,7 @@ using namespace std;
 
 //macro for debug printing byte content
 
-
+/// @todo Refactor!!!
 class Filter {
 public:
     int filter_type; //= -1; // securing that filter_type is not empty and not equal to any filter type
@@ -250,6 +262,14 @@ public:
      * @return int the limit.
      */
     int get_limit();
+
+    /**
+     * @brief Gets the string.
+     * 
+     * @param length the length to use.
+     * @return string
+     */
+    string get_string(int length);
 
 };
 #endif

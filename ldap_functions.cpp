@@ -257,7 +257,7 @@ void ldap_functions::search_entry()
 {
     DEBUG_PRINT("\n-----START OF SEARCH RES ENTRY-----\n");
 
-    vector<string> entry = {"cn", "mail"};;
+    vector<string> entry = {"cn", "mail"};
     // Iterate over each filter that was applied
     for (auto filter : filters_applied) {
         string res = "";
