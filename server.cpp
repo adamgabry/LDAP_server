@@ -96,6 +96,8 @@ void server::parse_database(string input_file)
         }
         */
     }
+    //close the file
+    infile.close();
 }
 
 void server::connect_clients() {

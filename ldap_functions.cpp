@@ -253,18 +253,23 @@ bool ldap_functions::handleSearchRequest()
     return true;
 }
 
+
+
 void ldap_functions::search_entry()
 {
     DEBUG_PRINT("\n-----START OF SEARCH RES ENTRY-----\n");
 
-    vector<string> entry = {"cn", "mail"};
+    vector<string> entry = {"cn", "uid", "mail"};
     // Iterate over each filter that was applied
     for (auto filter : filters_applied) {
         string res = "";
         for(int a = 0; a < entry.size(); a++)
         {
+            if(a != 1) //skip sending uid
+            {
             //the newlines are coming from here;
             res += string(1, 0x30) + LV_string(string(1, 0x04) + LV_string(entry[a]) + string(1, 0x31) + LV_string(string(1, 0x04) + LV_string(filter[a])));
+            }
         }
         res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(mess.id) + string(1, 0x64) + LV_string(string(1, 0x04) + LV_string("uid=" + filter[1]) + string(1, 0x30) + LV_string(res)));
         DEBUG_PRINT("res: " << res);

@@ -2,6 +2,7 @@
 #define LDAP_FUNCTIONS_H
 
 #include <iostream>
+#include <memory>
 #include <cstring>
 #include <string.h>
 #include <vector>
@@ -125,7 +126,7 @@ public:
     set<vector<string>> database;
     message mess;
     set<vector<string>> filters_applied; //all filters applied to the database
-
+    string filter_attribute_desc; //attribute description of the filter
     /*constructor*/
     /**
      * @brief Construct a new ldap_functions object.
