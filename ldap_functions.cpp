@@ -38,11 +38,10 @@ bool ldap_functions::check_ldap_FSM_state()
     DEBUG_PRINT("LDAP type "<< hex << byte_content); //here 0x2 is INTEGER, must be there
     if(byte_content != ASN_TAG_INTEGER) return 0; //ignore(so return false)
     
-    next_byte(client_message_header, 1);    //  3rd byte message ID
+    next_byte(client_message_header, 1);    //  L
+    next_byte(client_message_header, 1);    //  V 4th byte message ID
     mess.id = byte_content;                 //  get message id fction?
     DEBUG_PRINT("mess id "<< hex << byte_content); 
-
-    next_byte(client_message_header, 1);
 
     next_byte(client_message_header, 1);
 
@@ -267,7 +266,7 @@ void ldap_functions::search_entry()
             //the newlines are coming from here;
             res += string(1, 0x30) + LV_string(string(1, 0x04) + LV_string(entry[a]) + string(1, 0x31) + LV_string(string(1, 0x04) + LV_string(filter[a])));
         }
-        res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(2) + string(1, 0x64) + LV_string(string(1, 0x04) + LV_string("uid=" + filter[1]) + string(1, 0x30) + LV_string(res)));
+        res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(mess.id) + string(1, 0x64) + LV_string(string(1, 0x04) + LV_string("uid=" + filter[1]) + string(1, 0x30) + LV_string(res)));
         DEBUG_PRINT("res: " << res);
         send(client_message_header, res.c_str(), res.length(), 0);
     }
@@ -277,7 +276,7 @@ void ldap_functions::search_res_done()
 {
     DEBUG_PRINT("\n-----START OF SEARCH RES DONE-----\n");
     string res = {0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
-    res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(2) + string(1, 0x65) + LV_string(res));
+    res = string(1, 0x30) + LV_string(string(1, 0x02) + LV_id(mess.id) + string(1, 0x65) + LV_string(res));
     DEBUG_PRINT("res: " << res);
     send(client_message_header, res.c_str(), res.length(), 0);
     DEBUG_PRINT("\n-----END OF SEARCH RES DONE-----\n");
