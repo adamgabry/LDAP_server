@@ -51,11 +51,12 @@ Filter ldap_functions::get_filter() {
             filter.attr_value += byte_content;
             //DEBUG_PRINT_BYTE_CONTENT;
         }
+        filter_attribute_desc = filter.attr_desc;
         DEBUG_PRINT("atr_value: " << filter.attr_desc);
         DEBUG_PRINT("filter content: " << filter.attr_value); 
         break;
 
-case SUBSTRING:
+    case SUBSTRING:
         DEBUG_PRINT("SUBSTRING");
         filter.attr_desc = "";
         filter.attr_value = "";
@@ -70,7 +71,7 @@ case SUBSTRING:
         {
             filter.attr_desc += byte_content;
         }
-        DEBUG_PRINT("attr_value: " << filter.attr_desc);
+        DEBUG_PRINT("attr_value: " << filter.attr_desc); 
 
         // Parse substring elements
         DEBUG_PRINT_BYTE_CONTENT;
@@ -121,11 +122,26 @@ set<vector<string>> ldap_functions::performSearch(Filter f)
     DEBUG_PRINT("\n---performSearch---\n");
     if(f.filter_type == EQUALITY_MATCH){
         DEBUG_PRINT("database size: " << database.size());
+        int tmp_entry_type;
+        
+        if(filter_attribute_desc == "cn"){
+            tmp_entry_type = 0;
+        }
+        else if(filter_attribute_desc == "uid"){
+            tmp_entry_type = 1;
+        }
+        else if(filter_attribute_desc == "mail"){
+            tmp_entry_type = 2;
+        }
+        else{
+            tmp_entry_type = 0; ///@todo set to unknown later
+        }
+        
         for (auto entry : database) 
         {
-            DEBUG_PRINT("entry: " << entry[1]);
+            DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
             // Check if the attributeDesc matches the entry's attribute
-            if (entry.size() > 1 && entry[1] == f.attr_value) 
+            if (entry.size() > 1 && entry[tmp_entry_type] == f.attr_value) 
             {
                 DEBUG_PRINT("got here");
                 vector<string> entry_vec;
