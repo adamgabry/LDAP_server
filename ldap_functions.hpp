@@ -85,40 +85,96 @@ class message
         int version;
     };
 
+/**
+ * @brief Class representing LDAP functions.
+ * 
+ */
+/**
+ * @brief Class representing LDAP functions.
+ * 
+ */
 class ldap_functions{
 private:
+    /**
+     * @brief Reads the next byte from the client message.
+     * 
+     * @param client_message the client message to read from.
+     * @param amount the amount of bytes to read.
+     */
     void next_byte(int client_message, size_t amount);
     Filter filter;
     
 public:
-    int byte_index;     //actual byte index
-    int client_message_header; //header for checking message in check_ldap_FSM_state
+    int byte_index;             //actual byte index
+    int client_message_header;  //header for checking message in check_ldap_FSM_state
     int client_message_body;
-    int byte_content; //ch
-    string dn;      //dn content for search request
+    int byte_content;
+    string dn;                  //dn content for search request
     set<vector<string>> database;
     message mess;
     set<vector<string>> filters_applied; //all filters applied to the database
 
     /*constructor*/
+    /**
+     * @brief Construct a new ldap_functions object.
+     * 
+     * @param client_socket the client socket to use.
+     * @param database the database to use.
+     */
     ldap_functions(int client_socket, set<vector<string>> database);
 
+    /**
+     * @brief Checks the current state of the LDAP finite state machine.
+     * 
+     * @return true if the current state is valid, false otherwise.
+     */
     bool check_ldap_FSM_state();
 
+    /**
+     * @brief Chooses the LDAP message to handle.
+     * 
+     * @return true if the message was handled successfully, false otherwise.
+     */
     bool choose_ldap_message();
 
+    /**
+     * @brief Handles the BindRequest message.
+     * 
+     * @return true if the message was handled successfully, false otherwise.
+     */
     bool handleBindRequest();
 
+    /**
+     * @brief Sends the BindResponse message.
+     * 
+     */
     void sendBindResponse();
 
+    /**
+     * @brief Searches for an entry in the database.
+     * 
+     */
     void search_entry();
 
-    void search_res_entry();
-
+    /**
+     * @brief Sends the SearchResDone message.
+     * 
+     */
     void search_res_done();
 
+    /**
+     * @brief Prints the constructed response for debugging purposes.
+     * 
+     * @param bind_data_length the length of the bind data.
+     * @param bind_response the bind response to print.
+     */
     void debug_print_constructed_response(int bind_data_length, char* bind_response);
 
+    /**
+     * @brief Handles the SearchRequest message.
+     * 
+     * @return true if the message was handled successfully, false otherwise.
+     */
     bool handleSearchRequest();
 
     /// @brief Reads the DN content from the client message.
@@ -126,24 +182,73 @@ public:
     /// @param dn_length based on the length of the DN
     void getDNcontent(int lenght);
 
+    /**
+     * @brief Gets the length of the message.
+     * 
+     * @return int the length of the message.
+     */
     int get_mess_length();
 
+    /**
+     * @brief Checks if the next byte content equals to the given hex value.
+     * 
+     * @param hex_value the hex value to check.
+     * @return int the next byte content.
+     */
     int next_byte_content_equals_to(int hex_value);
 
+    /**
+     * @brief Checks if this byte content equals to the given hex value.
+     * 
+     * @param hex_value the hex value to check.
+     * @return int the byte content.
+     */
     int this_byte_content_equals_to(int hex_value);
 
+    /**
+     * @brief Checks if the next byte content is bigger than the given hex value.
+     * 
+     * @param hex_value the hex value to check.
+     * @return int the next byte content.
+     */
     int next_byte_content_bigger_than(int hex_value);
 
-    Filter get_filter_content();
-
+    /**
+     * @brief Gets the filter.
+     * 
+     * @return Filter the filter.
+     */
     Filter get_filter();
 
+    /**
+     * @brief Performs a search with the given filter.
+     * 
+     * @param f the filter to use.
+     * @return set<vector<string>> the results of the search.
+     */
     set<vector<string>> performSearch(Filter f);
 
+    /**
+     * @brief Gets the LV string.
+     * 
+     * @param s the string to use.
+     * @return string the LV string.
+     */
     string LV_string(string s);
 
+    /**
+     * @brief Gets the LV id.
+     * 
+     * @param num the id to use.
+     * @return string the LV id.
+     */
     string LV_id(int num);
     
+    /**
+     * @brief Gets the limit.
+     * 
+     * @return int the limit.
+     */
     int get_limit();
 
 };

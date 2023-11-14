@@ -54,7 +54,7 @@ Filter ldap_functions::get_filter() {
             //DEBUG_PRINT_BYTE_CONTENT;
         }
         DEBUG_PRINT("atr_value: " << filter.attr_desc);
-        DEBUG_PRINT("filter content: " << filter.attr_value);
+        DEBUG_PRINT("filter content: " << filter.attr_value); 
         break;
 
    /* case SUBSTRING:

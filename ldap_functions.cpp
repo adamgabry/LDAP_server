@@ -41,7 +41,7 @@ bool ldap_functions::check_ldap_FSM_state()
     next_byte(client_message_header, 1);    //  L
     next_byte(client_message_header, 1);    //  V 4th byte message ID
     mess.id = byte_content;                 //  get message id fction?
-    DEBUG_PRINT("mess id "<< hex << byte_content); 
+    DEBUG_PRINT("mess id "<< hex << byte_content);  
 
     next_byte(client_message_header, 1);
 
