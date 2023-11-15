@@ -31,7 +31,6 @@ int ldap_functions::next_byte_content_bigger_than(int hex_value)
     return 1;
 }
 
-//MAY NOT BE CORRECT FOR LONGER THAN 0x80
 ///@brief when returning from this function, sets already next byte to the buffer!
 int ldap_functions::get_mess_length() {
     int length = 0;
@@ -71,7 +70,7 @@ string ldap_functions::get_string(int length)
     string s = "";
     for(int i = 0; i < length; i++, next_byte(client_message_header, 1))
     {
-    s += byte_content;
+        s += byte_content;
     }
     return s;
 }
@@ -94,6 +93,7 @@ int ldap_functions::get_limit()
         limit_value += byte_content << shift; //constructing larger integer from a sequence of bytes with bit shifting
     }
     DEBUG_PRINT("limit value: " << dec << limit_value);
+    if(limit_value < 0) return -1; //cant be negative
     return limit_value;
 }
 

@@ -122,7 +122,6 @@ void server::connect_clients() {
         DEBUG_PRINT("Detached thread");
         // Free the memory allocated for client_socket_ptr
     }
-    close(server_socket);
 }
 
 
