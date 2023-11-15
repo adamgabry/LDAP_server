@@ -63,7 +63,8 @@ bool ldap_functions::choose_ldap_message()
             return handleSearchRequest();
             break;
         case UNBINDREQUEST:
-            next_byte(client_message_header, 1);
+            //next_byte(client_message_header, 1);
+            DEBUG_PRINT_BYTE_CONTENT;
             DEBUG_PRINT("\n UNBINDREQUEST \n");
             return 0;
             break;
@@ -216,41 +217,17 @@ bool ldap_functions::handleSearchRequest()
     //cin >> client_message_header;
     //cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
+    if(!this_byte_content_equals_to(0x30)) return 0; //T
+    next_byte(client_message_header, 1); //L
+    int attr_length = get_mess_length(); //L
 
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
+    for(int i = 0; i < attr_length - 1; i++)
+    {
+        next_byte(client_message_header, 1);
+        DEBUG_PRINT_BYTE_CONTENT;
+    }
 
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    next_byte(client_message_header, 1); //T
-    DEBUG_PRINT_BYTE_CONTENT;
-
-    return true;
+    return true; 
 }
 
 
