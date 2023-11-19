@@ -47,6 +47,7 @@ ldap_filters ldap_functions::get_filter() {
         filter.attr_value_length = get_mess_length();
         DEBUG_PRINT("attr_value_length: " << filter.attr_value_length);
 
+
         //load attribute value based on its length
         filter.attr_value = get_string(filter.attr_value_length);
 
@@ -61,6 +62,7 @@ ldap_filters ldap_functions::get_filter() {
         filter.attr_desc = "";
         filter.attr_value = "";
         if (!this_byte_content_equals_to(ASN_TAG_OCTETSTRING)) return filter;
+
 
         next_byte(client_message_header, 1);
 
@@ -85,6 +87,7 @@ ldap_filters ldap_functions::get_filter() {
             unsigned tmp = byte_content; // T unsigned so it can hold up to 255 
 
             next_byte(client_message_header, 1); 
+
 
             int tmp_length = get_mess_length(); // L
             string string_to_add = get_string(tmp_length); // V
@@ -118,7 +121,9 @@ ldap_filters ldap_functions::get_filter() {
     return filter;
 }
 
+
 set<vector<string>> ldap_functions::performSearch(ldap_filters f) 
+
 {
     set<vector<string>> result;
     DEBUG_PRINT("\n---performSearch---\n");
@@ -141,6 +146,7 @@ set<vector<string>> ldap_functions::performSearch(ldap_filters f)
     }
     DEBUG_PRINT("tmp_entry_type: " << tmp_entry_type);
     if(f.filter_type == EQUALITY_MATCH){
+
         for (auto entry : database) 
         {
             //DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
@@ -148,6 +154,7 @@ set<vector<string>> ldap_functions::performSearch(ldap_filters f)
             if (entry.size() > 1 && entry[tmp_entry_type] == f.attr_value) 
             {
                 DEBUG_PRINT("got to entry");
+
                 vector<string> entry_vec;
                 for (auto& e : entry) 
                 {
