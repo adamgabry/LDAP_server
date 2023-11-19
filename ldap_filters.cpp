@@ -38,6 +38,7 @@ ldap_filters ldap_functions::get_filter() {
         DEBUG_PRINT("attr_desc_length: " << filter.attr_desc_length);
 
         filter.attr_desc = get_string(filter.attr_desc_length);
+        filter_attribute_desc = filter.attr_desc; //settig global variable for search_entry()
 
         if(!this_byte_content_equals_to(ASN_TAG_OCTETSTRING)) return filter;
 
@@ -49,7 +50,7 @@ ldap_filters ldap_functions::get_filter() {
         //load attribute value based on its length
         filter.attr_value = get_string(filter.attr_value_length);
 
-        filter_attribute_desc = filter.attr_desc;
+        DEBUG_PRINT("filter_attribute_desc: " << filter_attribute_desc);
         DEBUG_PRINT("atr_value: " << filter.attr_desc);
         DEBUG_PRINT("filter content: " << filter.attr_value); 
         break;
@@ -67,6 +68,7 @@ ldap_filters ldap_functions::get_filter() {
         DEBUG_PRINT("attr_desc_length: " << filter.attr_desc_length);
 
         filter.attr_desc = get_string(filter.attr_desc_length); // V
+        filter_attribute_desc = filter.attr_desc; //settig global variable for search_entry()
 
         DEBUG_PRINT("attr_value: " << filter.attr_desc); 
 
@@ -120,34 +122,32 @@ set<vector<string>> ldap_functions::performSearch(ldap_filters f)
 {
     set<vector<string>> result;
     DEBUG_PRINT("\n---performSearch---\n");
+    DEBUG_PRINT("database size: " << database.size());
+    DEBUG_PRINT("filter_attribute_desc: " << filter_attribute_desc);
+    int tmp_entry_type = 0; //now setting it to cn by default
+    
+    
+    if(filter_attribute_desc == "cn")
+    {
+        tmp_entry_type = 0;
+    }
+    else if(filter_attribute_desc == "uid")
+    {
+        tmp_entry_type = 1;
+    }
+    else if(filter_attribute_desc == "mail")
+    {
+        tmp_entry_type = 2;
+    }
+    DEBUG_PRINT("tmp_entry_type: " << tmp_entry_type);
     if(f.filter_type == EQUALITY_MATCH){
-        DEBUG_PRINT("database size: " << database.size());
-        int tmp_entry_type;
-        
-        if(filter_attribute_desc == "cn")
-        {
-            tmp_entry_type = 0;
-        }
-        else if(filter_attribute_desc == "uid")
-        {
-            tmp_entry_type = 1;
-        }
-        else if(filter_attribute_desc == "mail")
-        {
-            tmp_entry_type = 2;
-        }
-        else
-        {
-            tmp_entry_type = 0; ///@todo set to unknown 
-        }
-        
         for (auto entry : database) 
         {
-            DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
+            //DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
             // Check if the attributeDesc matches the entry's attribute
             if (entry.size() > 1 && entry[tmp_entry_type] == f.attr_value) 
             {
-                DEBUG_PRINT("got here");
+                DEBUG_PRINT("got to entry");
                 vector<string> entry_vec;
                 for (auto& e : entry) 
                 {
@@ -162,12 +162,12 @@ set<vector<string>> ldap_functions::performSearch(ldap_filters f)
         DEBUG_PRINT("database size: " << database.size());
         for (auto entry : database) 
         {
-            DEBUG_PRINT("entry: " << entry[1]);
+            //DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
             // Check if the attributeDesc matches the entry's attribute
             if (entry.size() > 1) 
             {
                 std::regex pattern(f.attr_value);
-                if (std::regex_search(entry[1], pattern))
+                if (std::regex_search(entry[tmp_entry_type], pattern))
                 {
                     vector<string> entry_vec;
                     for (auto& e : entry) 

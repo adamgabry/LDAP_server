@@ -14,7 +14,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-
 #define ERR 1
 
 using namespace std; 
@@ -39,10 +38,8 @@ private:
     socklen_t client_addr_len = sizeof(client_addr);
     pthread_t tid;
     int* client_socket_ptr;
-    ///
-    
+
     /// vars for file parsing
-    ///
     vector<string> data;
     string  line,
             uid,

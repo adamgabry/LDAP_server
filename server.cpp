@@ -4,23 +4,13 @@
 #include "server.hpp"
 
 
-void* client_handler(void* arg, set<vector<string>> database) {
+void* client_handler(void* arg, set<vector<string>> database) 
+{
     int client_socket = *((int*)arg);
     free(arg); // Free the allocated memory
-
-   /*     if(DEBUG)
-        {
-            for (const auto& record : database)
-            {
-                cout << "cn: " << record[0] << endl;
-                cout << "uid: " << record[1] << endl;
-                cout << "email: " << record[2] << endl;
-                cout << "----------------------" << endl;
-            }
-        }*/
     ldap_functions ldap_start_binding(client_socket, database);
     while(ldap_start_binding.check_ldap_FSM_state()); //while because we want to check all FSM states, and then close the socket
-    DEBUG_PRINT("Closing socket");
+    DEBUG_PRINT("Closing client socket");
     close(client_socket);
 }
 
@@ -28,12 +18,15 @@ server::server(int port)
 {
 
     // Create a socket
+    //AF_INET - IPv4, SOCK_STREAM - TCP, 0 - IP
+//    server_socket = socket(AF_INET6, SOCK_STREAM, 0);
+
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (server_socket == -1) 
     {
         perror("Error creating socket");
-        exit(EXIT_FAILURE);
+        exit(0);
     }
 
     //clear memory
@@ -45,6 +38,7 @@ server::server(int port)
     server_addr.sin_port = htons(port); 
 
     // Bind the socket to the server address
+    //
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) 
     {
         perror("Error binding socket");
@@ -53,7 +47,8 @@ server::server(int port)
     }
 
     // Start listening for incoming connections
-    if (listen(server_socket, 5) == -1) 
+    // number of connections that can be waiting while the process is handling a particular connection
+    if (listen(server_socket, 5) == -1) //@todo thing about the best number of connections
     {
         perror("Error listening");
         close(server_socket);
@@ -69,7 +64,8 @@ void server::parse_database(string input_file)
 
     if(!infile)
     {
-        cerr << "Opening the file failed" << endl;
+        cout << "Opening the file failed" << endl;
+        infile.close();
         exit(EXIT_FAILURE);
     }
     while (getline(infile, line))
@@ -85,22 +81,15 @@ void server::parse_database(string input_file)
         }
         else
         {
-            cerr << "Failed to parse the line: " << line << endl;
+            cout << "Failed to parse the line: " << line << endl;
         }
-        /*
-        if(DEBUG)
-        {
-            for (const string& item : data) {
-                cout << item << endl;
-            }
-        }
-        */
     }
     //close the file
     infile.close();
 }
 
-void server::connect_clients() {
+void server::connect_clients() 
+{
     int client_num = 1;
     while (1) {
         // Accept incoming connections
@@ -119,27 +108,36 @@ void server::connect_clients() {
 
         // Start handling the communication with the client in a new thread
         thread(client_handler, client_socket_ptr, database).detach(); // Detach the thread to make it run independently
-        DEBUG_PRINT("Detached thread");
+        //DEBUG_PRINT("Detached thread");
+        printf("Client %d: Connection being proccessed\n", client_num - 1);
         // Free the memory allocated for client_socket_ptr
     }
 }
 
 
-/// @brief REDO THIS FCTION
+/// @brief trims the string
 /// @param s 
 /// @return 
-string server::trim(string s) {
-    const char* t = " \t\n\r\f\v";
-    string tmp = s.erase(0, s.find_first_not_of(t));
-    tmp = tmp.erase(tmp.find_last_not_of(t) + 1);
-    return tmp;
+//@todo remake to make more readable
+// https://cplusplus.com/reference/string/string/find_first_of/
+// https://cplusplus.com/reference/string/string/find_last_of/
+// https://cplusplus.com/reference/string/string/erase/
+string server::trim(string s) 
+{
+    const char* t = " \v\t\n\r\f";
+    s.erase(0, s.find_first_not_of(t)); //from pos 0 to first sign
+    s.erase(s.find_last_not_of(t) + 1); //from last sign to end
+
+    //test this
+    //s.erase(std::remove_if(s.begin(), s.end(), [t](char c) { return std::strchr(t, c) != nullptr; }), s.end());
+    return s;
 }
 
 
 int main(int argc, char *argv[]) 
 {
-    int opt = 0;
     string file_name = "";
+    int opt;
     int port = 389;
     while ((opt = getopt(argc, argv, "p:f:")) != -1) 
     {
@@ -152,14 +150,14 @@ int main(int argc, char *argv[])
                 file_name = optarg;
                 break;
             default:
-                cerr << "Argument parse error" << endl;
+                cout << "Argument parse error" << endl;
                 exit(EXIT_FAILURE);
         }
     }
 
-    server ldap_server(PORT);
+    server ldap_server(port);
 
-    cout << "LDAP server is listening on port " << PORT << "..." << endl;
+    cout << "LDAP server is listening on port " << port << "..." << endl;
     
     ldap_server.parse_database(file_name);
     ldap_server.connect_clients();

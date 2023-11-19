@@ -52,6 +52,9 @@ bool ldap_functions::check_ldap_FSM_state()
         return 0;
 }
 
+/*
+In this function we are assuring, that it doesnt matter in what order came BindRequest or SearchRequest
+*/
 bool ldap_functions::choose_ldap_message()
 {
     switch(mess.message_type)
@@ -80,7 +83,9 @@ bool ldap_functions::handleBindRequest() // zkracuje jelikoz pracuju s clientmes
 
     next_byte(client_message_header, 1);
 
-    DEBUG_PRINT("Bindreq length is: "<< hex << get_mess_length());
+    int bindreq_length = get_mess_length();
+
+    DEBUG_PRINT("Bindreq length is: "<< hex << bindreq_length);
 
     next_byte(client_message_header, 2);
 
@@ -139,7 +144,9 @@ bool ldap_functions::handleSearchRequest()
 
     next_byte(client_message_header, 1);
 
-    DEBUG_PRINT(" LDAP Searchreq length is: "<< hex << get_mess_length());
+    int searchreq_length = get_mess_length();
+
+    DEBUG_PRINT(" LDAP Searchreq length is: "<< hex << searchreq_length);
 
     if(!this_byte_content_equals_to(ASN_TAG_OCTETSTRING)) return 0; // T objectType - octet string
 
@@ -153,6 +160,8 @@ bool ldap_functions::handleSearchRequest()
     getDNcontent(dn_length);    //V
     
     DEBUG_PRINT("Distinguished Name: " << dn); 
+
+    DEBUG_PRINT_BYTE_CONTENT;
 
     //getDNcontent already sets next byte
     if(!this_byte_content_equals_to(ASN_TAG_ENUMERATED)) return 0; //T
@@ -203,7 +212,7 @@ bool ldap_functions::handleSearchRequest()
     ///@brief all values that passed the filter
     filters_applied = performSearch(filter);
     
-    if(DEBUG)
+    #ifdef DEBUG
     {
         for (auto i: filters_applied) {
             if (i.size() >= 3) {
@@ -211,6 +220,7 @@ bool ldap_functions::handleSearchRequest()
             }
         }
     }
+    #endif
 
     search_entry();  
     search_res_done();

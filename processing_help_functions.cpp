@@ -57,6 +57,8 @@ int ldap_functions::get_mess_length() {
 
 void ldap_functions::getDNcontent(int dn_length) {
     dn = "";
+    if(dn_length == 0) return; //
+
     next_byte(client_message_header, 1); //move from the byte with dn length content
     for (int i = 0; i < dn_length - 1 ; i++) {
         dn += byte_content;
@@ -99,7 +101,7 @@ int ldap_functions::get_limit()
 
 void ldap_functions::debug_print_constructed_response(int bind_data_length, char* bind_response)
 {
-    if(DEBUG)
+    #ifdef DEBUG
     {
         DEBUG_PRINT("BindResponse length: "<< dec << bind_data_length << "\nSent BindResponse to the client:");
         
@@ -109,6 +111,7 @@ void ldap_functions::debug_print_constructed_response(int bind_data_length, char
         }
         std::cout << std::endl;
     }
+    #endif
 }
 
 /// @brief if lengt is < 128: the length is split into multiple 7-bit chunks and each chunk is added to the LV (Length Value) variable. The LV variable is used to store the encoded length of the message.This code is part of a function that is used to encode the length of a message in a specific format.
