@@ -26,6 +26,7 @@
 #define ASN_TAG_BIT_STRING 0x03
 #define ASN_TAG_OCTETSTRING 0x04
 #define BER_TAG_SEQUENCE 0x30
+#define ASN_TAG_ENUMERATED 0x0A
 
 //LDAP MESSAGE TYPES
 #define BINDREQUEST 0x60
@@ -63,50 +64,40 @@ using namespace std;
     #define DEBUG_PRINT_BYTE_CONTENT DEBUG_PRINT();
 #endif
 
-//macro for debug printing byte content
 
-/// @todo Refactor!!!
-class Filter {
+class ldap_filters {
 public:
     int filter_type; //= -1; // securing that filter_type is not empty and not equal to any filter type
     
-    int attr_desc_length;
-    string attr_desc; 
+    int attr_desc_length; //length of the attribute description
+    string attr_desc;   //attribute descriptor value
 
-    int attr_value_length;
-    string attr_value; 
+    int attr_value_length; //length of the attribute value
+    string attr_value; //attribute value
 
     int filter_length; 
-    //TODO: redo this
-    vector<Filter> filters; /**< Stored subfilters **/
-    /**< Map for names of AttrDesc **/
-    map<string, int> known = {{"cn", 0}, {"commonname", 0},
-                              {"uid", 1}, {"userid", 1},
-                              {"mail", 2}};
-    int w; /**< Index of AttrDesc **/
+    vector<ldap_filters> filters; 
 };
 
+/**
+ * @brief Represents an LDAP message.
+ */
 class message
-    {
+{
     public:
         int protocol_type;
         int id;
         int lenght;
         int message_type;
         int size_limit;
-        int time_limit;
-        int version;
-    };
+};
 
 /**
  * @brief Class representing LDAP functions.
  * 
  */
-/**
- * @brief Class representing LDAP functions.
- * 
- */
-class ldap_functions{
+class ldap_functions
+{
 private:
     /**
      * @brief Reads the next byte from the client message.
@@ -115,7 +106,7 @@ private:
      * @param amount the amount of bytes to read.
      */
     void next_byte(int client_message, size_t amount);
-    Filter filter;
+    ldap_filters filter;
     
 public:
     int byte_index;             //actual byte index
@@ -229,9 +220,9 @@ public:
     /**
      * @brief Gets the filter.
      * 
-     * @return Filter the filter.
+     * @return ldap_filters the filter.
      */
-    Filter get_filter();
+    ldap_filters get_filter();
 
     /**
      * @brief Performs a search with the given filter.
@@ -239,7 +230,7 @@ public:
      * @param f the filter to use.
      * @return set<vector<string>> the results of the search.
      */
-    set<vector<string>> performSearch(Filter f);
+    set<vector<string>> performSearch(ldap_filters f);
 
     /**
      * @brief Gets the LV string.

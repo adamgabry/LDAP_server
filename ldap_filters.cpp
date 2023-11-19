@@ -2,8 +2,8 @@
 #include "ldap_functions.hpp"
 
 
-Filter ldap_functions::get_filter() {
-    Filter filter;
+ldap_filters ldap_functions::get_filter() {
+    ldap_filters filter;
 
     DEBUG_PRINT("---ENTERING FILTER---");
     DEBUG_PRINT_BYTE_CONTENT;
@@ -27,6 +27,7 @@ Filter ldap_functions::get_filter() {
     {
     case EQUALITY_MATCH:
         DEBUG_PRINT("EQUALITY_MATCH");
+
         filter.attr_desc = "";
         filter.attr_value = "";
 
@@ -36,53 +37,58 @@ Filter ldap_functions::get_filter() {
         filter.attr_desc_length = get_mess_length();
         DEBUG_PRINT("attr_desc_length: " << filter.attr_desc_length);
 
-        for (int i = 0; i < filter.attr_desc_length; i++, next_byte(client_message_header, 1))
-        {
-            filter.attr_desc += byte_content;
-        }
+        filter.attr_desc = get_string(filter.attr_desc_length);
+        filter_attribute_desc = filter.attr_desc; //settig global variable for search_entry()
 
         if(!this_byte_content_equals_to(ASN_TAG_OCTETSTRING)) return filter;
+
         next_byte(client_message_header, 1);
+        
         filter.attr_value_length = get_mess_length();
         DEBUG_PRINT("attr_value_length: " << filter.attr_value_length);
 
-        for(int i = 0; i < filter.attr_value_length; i++, next_byte(client_message_header, 1))
-        {
-            filter.attr_value += byte_content;
-            //DEBUG_PRINT_BYTE_CONTENT;
-        }
-        filter_attribute_desc = filter.attr_desc;
+
+        //load attribute value based on its length
+        filter.attr_value = get_string(filter.attr_value_length);
+
+        DEBUG_PRINT("filter_attribute_desc: " << filter_attribute_desc);
         DEBUG_PRINT("atr_value: " << filter.attr_desc);
         DEBUG_PRINT("filter content: " << filter.attr_value); 
         break;
 
     case SUBSTRING:
         DEBUG_PRINT("SUBSTRING");
+
         filter.attr_desc = "";
         filter.attr_value = "";
         if (!this_byte_content_equals_to(ASN_TAG_OCTETSTRING)) return filter;
 
-        // Parse attribute description
+
         next_byte(client_message_header, 1);
+
         filter.attr_desc_length = get_mess_length();
         DEBUG_PRINT("attr_desc_length: " << filter.attr_desc_length);
 
-        for (int i = 0; i < filter.attr_desc_length; i++, next_byte(client_message_header, 1))
-        {
-            filter.attr_desc += byte_content;
-        }
+        filter.attr_desc = get_string(filter.attr_desc_length); // V
+        filter_attribute_desc = filter.attr_desc; //settig global variable for search_entry()
+
         DEBUG_PRINT("attr_value: " << filter.attr_desc); 
 
         // Parse substring elements
         DEBUG_PRINT_BYTE_CONTENT;
         if(!this_byte_content_equals_to(BER_TAG_SEQUENCE)) return filter; //T
+
         next_byte(client_message_header, 1);
-        filter.attr_value_length = get_mess_length(); //L
+
+        filter.attr_value_length = get_mess_length(); //L, V
 
         while(filter.attr_value_length > 0)
         {
             unsigned tmp = byte_content; // T unsigned so it can hold up to 255 
+
             next_byte(client_message_header, 1); 
+
+
             int tmp_length = get_mess_length(); // L
             string string_to_add = get_string(tmp_length); // V
             DEBUG_PRINT("string_to_add: " << string_to_add);
@@ -113,37 +119,42 @@ Filter ldap_functions::get_filter() {
             break;
         }
     return filter;
-    // Access functions and perform operations...
 }
 
-set<vector<string>> ldap_functions::performSearch(Filter f) 
+
+set<vector<string>> ldap_functions::performSearch(ldap_filters f) 
+
 {
     set<vector<string>> result;
     DEBUG_PRINT("\n---performSearch---\n");
+    DEBUG_PRINT("database size: " << database.size());
+    DEBUG_PRINT("filter_attribute_desc: " << filter_attribute_desc);
+    int tmp_entry_type = 0; //now setting it to cn by default
+    
+    
+    if(filter_attribute_desc == "cn")
+    {
+        tmp_entry_type = 0;
+    }
+    else if(filter_attribute_desc == "uid")
+    {
+        tmp_entry_type = 1;
+    }
+    else if(filter_attribute_desc == "mail")
+    {
+        tmp_entry_type = 2;
+    }
+    DEBUG_PRINT("tmp_entry_type: " << tmp_entry_type);
     if(f.filter_type == EQUALITY_MATCH){
-        DEBUG_PRINT("database size: " << database.size());
-        int tmp_entry_type;
-        
-        if(filter_attribute_desc == "cn"){
-            tmp_entry_type = 0;
-        }
-        else if(filter_attribute_desc == "uid"){
-            tmp_entry_type = 1;
-        }
-        else if(filter_attribute_desc == "mail"){
-            tmp_entry_type = 2;
-        }
-        else{
-            tmp_entry_type = 0; ///@todo set to unknown later
-        }
-        
+
         for (auto entry : database) 
         {
-            DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
+            //DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
             // Check if the attributeDesc matches the entry's attribute
             if (entry.size() > 1 && entry[tmp_entry_type] == f.attr_value) 
             {
-                DEBUG_PRINT("got here");
+                DEBUG_PRINT("got to entry");
+
                 vector<string> entry_vec;
                 for (auto& e : entry) 
                 {
@@ -158,12 +169,12 @@ set<vector<string>> ldap_functions::performSearch(Filter f)
         DEBUG_PRINT("database size: " << database.size());
         for (auto entry : database) 
         {
-            DEBUG_PRINT("entry: " << entry[1]);
+            //DEBUG_PRINT("entry: " << entry[tmp_entry_type]);
             // Check if the attributeDesc matches the entry's attribute
             if (entry.size() > 1) 
             {
                 std::regex pattern(f.attr_value);
-                if (std::regex_search(entry[1], pattern))
+                if (std::regex_search(entry[tmp_entry_type], pattern))
                 {
                     vector<string> entry_vec;
                     for (auto& e : entry) 
@@ -176,5 +187,6 @@ set<vector<string>> ldap_functions::performSearch(Filter f)
         }
     }
     DEBUG_PRINT("result size: " << result.size());
+
     return result;
 }
