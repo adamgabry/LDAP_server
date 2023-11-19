@@ -18,10 +18,7 @@ server::server(int port)
 {
 
     // Create a socket
-    //AF_INET - IPv4, SOCK_STREAM - TCP, 0 - IP
-//    server_socket = socket(AF_INET6, SOCK_STREAM, 0);
-
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    server_socket = socket(AF_INET6, SOCK_STREAM, 0);
 
     if (server_socket == -1) 
     {
@@ -29,13 +26,16 @@ server::server(int port)
         exit(0);
     }
 
+    int optval = 0;  // allowance of ipv4/6
+    setsockopt(server_socket, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof(optval));
+
     //clear memory
     memset(&server_addr, 0, sizeof(server_addr));
 
     // Configure the server address structure
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY; // Listen on all interfaces
-    server_addr.sin_port = htons(port); 
+    server_addr.sin6_family = AF_INET6;
+    server_addr.sin6_addr = in6addr_any; // Listen on all interfaces
+    server_addr.sin6_port = htons(port); 
 
     // Bind the socket to the server address
     //
@@ -48,7 +48,7 @@ server::server(int port)
 
     // Start listening for incoming connections
     // number of connections that can be waiting while the process is handling a particular connection
-    if (listen(server_socket, 5) == -1) //@todo thing about the best number of connections
+    if (listen(server_socket, 5) == -1) //@todo think about the best number of connections
     {
         perror("Error listening");
         close(server_socket);
@@ -99,7 +99,7 @@ void server::connect_clients()
             continue;
         }
 
-        cout << "Client " << client_num << ": Connection accepted from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
+        cout << "Client " << client_num << ": Connection accepted from port:" << ":" << ntohs(client_addr.sin6_port) << endl;
         client_num++;
 
         // Create a new thread to handle the client
