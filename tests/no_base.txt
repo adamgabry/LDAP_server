@@ -1,0 +1,21 @@
+command: ldapsearch -H ldap://[::1]:389 -x 'mail=xgabr*.cz' uid -P 2 > tests/no_base.txt
+
+# extended LDIF
+#
+# LDAPv2
+# base <> (default) with scope subtree
+# filter: mail=xgabr*.cz
+# requesting: uid 
+#
+
+# xgabry01
+dn: uid=xgabry01
+cn: Gabrys Adam
+mail: xgabry01@stud.fit.vutbr.cz
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1

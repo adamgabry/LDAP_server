@@ -1,0 +1,30 @@
+command: ldapsearch -H ldap://127.0.0.1:389 -x -z 100 -b "dc=vutbr,dc=cz" 'mail=xgal*.cz' uid -P 2 > tests/loopback_interface.txt# extended LDIF
+
+#
+# LDAPv2
+# base <dc=vutbr,dc=cz> with scope subtree
+# filter: mail=xgal*.cz
+# requesting: uid 
+#
+
+# xgalet02
+dn: uid=xgalet02
+cn: Galetka Jan
+mail: xgalet02@stud.fit.vutbr.cz
+
+# xgalls00
+dn: uid=xgalls00
+cn: Gall Samuel
+mail: xgalls00@stud.fit.vutbr.cz
+
+# xgallo04
+dn: uid=xgallo04
+cn: Gallo Jiri
+mail: xgallo04@stud.fit.vutbr.cz
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 4
+# numEntries: 3

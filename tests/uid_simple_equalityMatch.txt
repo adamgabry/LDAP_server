@@ -1,0 +1,21 @@
+command: ldapsearch -H ldap://localhost:389 -x -z 100 -b "dc=vutbr,dc=cz" 'uid=xgabry01' uid -P 2 > tests/uid_simple_equalityMatch.txt
+
+# extended LDIF
+#
+# LDAPv2
+# base <dc=vutbr,dc=cz> with scope subtree
+# filter: uid=xgabry01
+# requesting: uid 
+#
+
+# xgabry01
+dn: uid=xgabry01
+cn: Gabrys Adam
+mail: xgabry01@stud.fit.vutbr.cz
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1

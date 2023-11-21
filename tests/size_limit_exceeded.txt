@@ -1,0 +1,67 @@
+command: ldapsearch -H ldap://localhost:389 -x -z 10 'uid=xga*' -P 2 > tests/size_limit_exceeded.txt
+
+# extended LDIF
+#
+# LDAPv2
+# base <dc=vutbr,dc=cz> with scope subtree
+# filter: uid=xga*
+# requesting: uid 
+#
+
+# xgabry01
+dn: uid=xgabry01
+cn: Gabrys Adam
+mail: xgabry01@stud.fit.vutbr.cz
+
+# xgachm00
+dn: uid=xgachm00
+cn: Gach Marek
+mail: xgachm00@stud.fit.vutbr.cz
+
+# xgafri00
+dn: uid=xgafri00
+cn: Gafrik Patrik
+mail: xgafri00@stud.fit.vutbr.cz
+
+# xgajdo33
+dn: uid=xgajdo33
+cn: Gajdosik Richard
+mail: xgajdo33@stud.fit.vutbr.cz
+
+# xgalet02
+dn: uid=xgalet02
+cn: Galetka Jan
+mail: xgalet02@stud.fit.vutbr.cz
+
+# xgalls00
+dn: uid=xgalls00
+cn: Gall Samuel
+mail: xgalls00@stud.fit.vutbr.cz
+
+# xgallo04
+dn: uid=xgallo04
+cn: Gallo Jiri
+mail: xgallo04@stud.fit.vutbr.cz
+
+# xgarde00
+dn: uid=xgarde00
+cn: Gardelka Zdenek
+mail: xgarde00@stud.fit.vutbr.cz
+
+# xgargu01
+dn: uid=xgargu01
+cn: Gargulak David
+mail: xgargu01@stud.fit.vutbr.cz
+
+# xgarip00
+dn: uid=xgarip00
+cn: Garipova Dinara
+mail: xgarip00@stud.fit.vutbr.cz
+
+# search result
+search: 2
+result: 4 Size limit exceeded
+text: 
+
+# numResponses: 11
+# numEntries: 10
