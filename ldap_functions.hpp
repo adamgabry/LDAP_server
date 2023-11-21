@@ -64,6 +64,7 @@ using namespace std;
     #define DEBUG_PRINT_BYTE_CONTENT DEBUG_PRINT();
 #endif
 
+
 class ldap_filters {
 public:
     int filter_type; //= -1; // securing that filter_type is not empty and not equal to any filter type
