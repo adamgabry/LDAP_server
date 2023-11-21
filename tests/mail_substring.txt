@@ -1,0 +1,23 @@
+command: ldapsearch -H ldap://localhost:389 -x -z 100 -b "dc=vutbr,dc=cz" 'mail=xgabr*' uid -P 2 > tests/mail_substring.txt
+
+output:
+
+# extended LDIF
+#
+# LDAPv2
+# base <dc=vutbr,dc=cz> with scope subtree
+# filter: cn=Gabrys Adam
+# requesting: uid 
+#
+
+# xgabry01
+dn: uid=xgabry01
+cn: Gabrys Adam
+mail: xgabry01@stud.fit.vutbr.cz
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1

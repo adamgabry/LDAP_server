@@ -1,0 +1,19 @@
+# extended LDIF
+#
+# LDAPv2
+# base <dc=vutbr,dc=cz> with scope subtree
+# filter: mail=xgabry01@stud.fit.vutbr.cz
+# requesting: ALL
+#
+
+# xgabry01
+dn: uid=xgabry01
+cn: Gabrys Adam
+mail: xgabry01@stud.fit.vutbr.cz
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1

@@ -1,0 +1,20 @@
+command: ldapsearch -H ldap://[::1]:389 -x -z 100 -b "dc=vutbr,dc=cz" 'cn=Gabry*' -P 2
+# extended LDIF
+#
+# LDAPv2
+# base <dc=vutbr,dc=cz> with scope subtree
+# filter: cn=Gabry*
+# requesting: ALL
+#
+
+# xgabry01
+dn: uid=xgabry01
+cn: Gabrys Adam
+mail: xgabry01@stud.fit.vutbr.cz
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1
