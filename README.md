@@ -6,10 +6,6 @@ popis: Implementace programu do předmětu ISA, kdy bylo za úkol naimplementova
 
 příklad spuštění: ./isa-ldapserver {-p <port>} -f <soubor>  
 
-Omezení: Neimplementovány filtry AND, OR, NOT  
-
-Specifikace: Ze zadání jsem pochopil, že máme posílat vždy atributy cn, mail. Tedy atribut uid neposílám, pouze je nastaven u dn.  
-
 seznam odevzdaných souborů:  
 README.md  
 tests  
